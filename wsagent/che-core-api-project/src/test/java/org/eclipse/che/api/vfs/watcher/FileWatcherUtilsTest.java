@@ -12,7 +12,10 @@ package org.eclipse.che.api.vfs.watcher;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
@@ -20,8 +23,6 @@ import java.nio.file.Paths;
 
 import static java.util.Collections.singleton;
 import static org.eclipse.che.api.vfs.watcher.FileWatcherUtils.isExcluded;
-import static org.eclipse.che.api.vfs.watcher.FileWatcherUtils.toInternalPath;
-import static org.eclipse.che.api.vfs.watcher.FileWatcherUtils.toNormalPath;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -31,32 +32,6 @@ import static org.mockito.Mockito.when;
  * Tests for {@link FileWatcherUtils}
  */
 public class FileWatcherUtilsTest {
-    Path root;
-
-    @Before
-    public void setUp() throws Exception {
-        root = Paths.get("/", "projects");
-    }
-
-    @Test
-    public void shouldGetInternalPath() throws Exception {
-        Path path = Paths.get("/", "projects", "che");
-        String expected = Paths.get("/", "che").toString();
-
-        String actual = toInternalPath(root, path);
-
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void shouldGetNormalPath() throws Exception {
-        String path = Paths.get("/", "che").toString();
-        Path expected = Paths.get("/", "projects", "che");
-
-        Path actual = toNormalPath(root, path);
-
-        assertEquals(expected, actual);
-    }
 
     @Test
     public void shouldBeExcluded() throws Exception {

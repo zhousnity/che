@@ -24,10 +24,10 @@ import org.eclipse.che.api.vfs.VirtualFile;
 import org.eclipse.che.api.vfs.VirtualFileSystemProvider;
 import org.eclipse.che.api.vfs.watcher.FileWatcherManager;
 import org.eclipse.che.api.vfs.watcher.FileWatcherUtils;
+import org.eclipse.che.api.vfs.watcher.PathResolver;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Singleton;
 import java.io.File;
 import java.nio.file.Files;
@@ -73,16 +73,16 @@ public class EditorFileTracker {
     private final Map<String, Integer> watchIdRegistry = new HashMap<>();
 
     private final RequestTransmitter        transmitter;
-    private       File                      root;
-    private final FileWatcherManager fileWatcherManager;
+    private final PathResolver              pathResolver;
+    private final FileWatcherManager        fileWatcherManager;
     private final VirtualFileSystemProvider vfsProvider;
 
 
     @Inject
-    public EditorFileTracker(@Named("che.user.workspaces.storage") File root, FileWatcherManager fileWatcherManager,
+    public EditorFileTracker(PathResolver pathResolver, FileWatcherManager fileWatcherManager,
                              RequestTransmitter transmitter,
                              VirtualFileSystemProvider vfsProvider) {
-        this.root = root;
+        this.pathResolver = pathResolver;
         this.fileWatcherManager = fileWatcherManager;
         this.transmitter = transmitter;
         this.vfsProvider = vfsProvider;
@@ -183,7 +183,7 @@ public class EditorFileTracker {
         return it -> new Timer().schedule(new TimerTask() {
             @Override
             public void run() {
-                if (!Files.exists(FileWatcherUtils.toNormalPath(root.toPath(), it))) {
+                if (!Files.exists(pathResolver.toInternalPath(it))) {
                     FileStateUpdateDto params = newDto(FileStateUpdateDto.class).withPath(path).withType(DELETED);
                     transmitter.transmitOneToNone(endpointId, OUTGOING_METHOD, params);
                 }

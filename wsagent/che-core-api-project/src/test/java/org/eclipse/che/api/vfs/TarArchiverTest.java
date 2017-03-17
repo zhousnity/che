@@ -21,7 +21,6 @@ import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.util.FileCleaner;
 import org.eclipse.che.api.vfs.impl.file.LocalVirtualFileSystem;
 import org.eclipse.che.api.vfs.search.Searcher;
-import org.eclipse.che.api.vfs.search.SearcherProvider;
 import org.eclipse.che.commons.lang.IoUtil;
 import org.eclipse.che.commons.lang.NameGenerator;
 import org.junit.After;
@@ -63,14 +62,10 @@ public class TarArchiverTest {
         testDirectory = new File(targetDir, NameGenerator.generate("fs-", 4));
         assertTrue(testDirectory.mkdir());
 
-        SearcherProvider searcherProvider = mock(SearcherProvider.class);
         Searcher searcher = mock(Searcher.class);
         VirtualFileSystem virtualFileSystem = new LocalVirtualFileSystem(testDirectory,
                                                                          mock(ArchiverFactory.class),
-                                                                         searcherProvider,
                                                                          mock(AbstractVirtualFileSystemProvider.CloseCallback.class));
-        when(searcherProvider.getSearcher(eq(virtualFileSystem), eq(true))).thenReturn(searcher);
-        when(searcherProvider.getSearcher(eq(virtualFileSystem))).thenReturn(searcher);
         vfsRoot = virtualFileSystem.getRoot();
     }
 

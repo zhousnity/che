@@ -10,9 +10,8 @@
  *******************************************************************************/
 package org.eclipse.che.api.vfs.search;
 
-import com.google.common.base.Optional;
-
 import java.util.List;
+import java.util.Optional;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
@@ -107,7 +106,7 @@ public class SearchResult {
         public SearchResult build() {
             Optional<QueryExpression> optionalPageNexQueryExpression;
             if (nextPageQueryExpression == null) {
-                optionalPageNexQueryExpression = Optional.absent();
+                optionalPageNexQueryExpression = Optional.empty();
             } else {
                 optionalPageNexQueryExpression = Optional.of(nextPageQueryExpression);
             }

@@ -45,7 +45,6 @@ import org.eclipse.che.api.vfs.impl.file.DefaultFileWatcherNotificationHandler;
 import org.eclipse.che.api.vfs.impl.file.FileTreeWatcher;
 import org.eclipse.che.api.vfs.impl.file.FileWatcherNotificationHandler;
 import org.eclipse.che.api.vfs.impl.file.LocalVirtualFileSystemProvider;
-import org.eclipse.che.api.vfs.search.impl.FSLuceneSearcherProvider;
 import org.eclipse.che.api.vfs.watcher.FileWatcherManager;
 import org.eclipse.che.api.workspace.shared.dto.ProjectConfigDto;
 import org.eclipse.che.plugin.java.server.projecttype.JavaProjectType;
@@ -270,10 +269,8 @@ public class JavaDebuggerTest {
 
         Set<PathMatcher> filters = new HashSet<>();
         filters.add(path -> true);
-        FSLuceneSearcherProvider sProvider = new FSLuceneSearcherProvider(indexDir, filters);
-
         EventService eventService = new EventService();
-        LocalVirtualFileSystemProvider vfsProvider = new LocalVirtualFileSystemProvider(root, sProvider);
+        LocalVirtualFileSystemProvider vfsProvider = new LocalVirtualFileSystemProvider(root);
         ProjectTypeRegistry projectTypeRegistry = new ProjectTypeRegistry(new HashSet<>());
         projectTypeRegistry.registerProjectType(new JavaProjectType(new JavaValueProviderFactory()));
         ProjectHandlerRegistry projectHandlerRegistry = new ProjectHandlerRegistry(new HashSet<>());

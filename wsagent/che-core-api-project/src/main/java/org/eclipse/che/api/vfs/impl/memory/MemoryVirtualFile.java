@@ -24,7 +24,6 @@ import org.eclipse.che.api.vfs.VirtualFile;
 import org.eclipse.che.api.vfs.VirtualFileFilter;
 import org.eclipse.che.api.vfs.VirtualFileSystem;
 import org.eclipse.che.api.vfs.VirtualFileVisitor;
-import org.eclipse.che.api.vfs.search.SearcherProvider;
 import org.eclipse.che.commons.lang.NameGenerator;
 import org.eclipse.che.commons.lang.Pair;
 import org.slf4j.Logger;
@@ -356,8 +355,6 @@ public class MemoryVirtualFile implements VirtualFile {
 
             this.content = Arrays.copyOf(content, content.length);
             lastModificationDate = System.currentTimeMillis();
-
-            updateInSearcher();
         } else {
             throw new ForbiddenException(String.format("We were unable to update the content. Item '%s' is not a file", getPath()));
         }
@@ -390,7 +387,6 @@ public class MemoryVirtualFile implements VirtualFile {
         }
         if (parent.isFolder()) {
             VirtualFile copy = doCopy((MemoryVirtualFile)parent, newName, overwrite);
-            addInSearcher(copy);
             return copy;
         } else {
             throw new ForbiddenException(String.format("Unable create copy of '%s'. Item '%s' specified as parent is not a folder.",
@@ -480,8 +476,6 @@ public class MemoryVirtualFile implements VirtualFile {
         this.name = newName;
         lock = null;
 
-        deleteFromSearcher(myPath, isFile);
-        addInSearcher(this);
         return this;
     }
 
@@ -517,8 +511,6 @@ public class MemoryVirtualFile implements VirtualFile {
         lock = null;
 
         lastModificationDate = System.currentTimeMillis();
-        deleteFromSearcher(myPath, isFile);
-        addInSearcher(this);
         return this;
     }
 
@@ -553,7 +545,6 @@ public class MemoryVirtualFile implements VirtualFile {
         parent.children.remove(name);
         exists = false;
         parent = null;
-        deleteFromSearcher(myPath, isFile);
     }
 
     List<VirtualFile> getTreeAsList(VirtualFile folder) throws ServerException {
@@ -595,7 +586,6 @@ public class MemoryVirtualFile implements VirtualFile {
 
         if (isFolder()) {
             extract(fileSystem.getArchiverFactory().createArchiver(this, "zip"), zipped, overwrite, stripNumber);
-            addInSearcher(this);
         } else {
             throw new ForbiddenException(String.format("Unable import zip. Item '%s' is not a folder", getPath()));
         }
@@ -619,7 +609,6 @@ public class MemoryVirtualFile implements VirtualFile {
 
         if (isFolder()) {
             extract(fileSystem.getArchiverFactory().createArchiver(this, "tar"), tarArchive, overwrite, stripNumber);
-            addInSearcher(this);
         } else {
             throw new ForbiddenException(String.format("Unable import tar archive. Item '%s' is not a folder", getPath()));
         }
@@ -721,7 +710,6 @@ public class MemoryVirtualFile implements VirtualFile {
             if (!addChild(newFile)) {
                 throw new ConflictException(String.format("Item with the name '%s' already exists", name));
             }
-            addInSearcher(newFile);
             return newFile;
         } else {
             throw new ForbiddenException("Unable create new file. Item specified as parent is not a folder");
@@ -833,39 +821,6 @@ public class MemoryVirtualFile implements VirtualFile {
     private void checkName(String name) throws ServerException {
         if (name == null || name.trim().isEmpty()) {
             throw new ServerException("Item's name is not set");
-        }
-    }
-
-    private void addInSearcher(VirtualFile newFile) {
-        SearcherProvider searcherProvider = fileSystem.getSearcherProvider();
-        if (searcherProvider != null) {
-            try {
-                searcherProvider.getSearcher(fileSystem).add(newFile);
-            } catch (ServerException e) {
-                LOG.error(e.getMessage(), e);
-            }
-        }
-    }
-
-    private void updateInSearcher() {
-        SearcherProvider searcherProvider = fileSystem.getSearcherProvider();
-        if (searcherProvider != null) {
-            try {
-                searcherProvider.getSearcher(fileSystem).update(this);
-            } catch (ServerException e) {
-                LOG.error(e.getMessage(), e);
-            }
-        }
-    }
-
-    private void deleteFromSearcher(Path path, boolean isFile) {
-        SearcherProvider searcherProvider = fileSystem.getSearcherProvider();
-        if (searcherProvider != null) {
-            try {
-                searcherProvider.getSearcher(fileSystem).delete(path.toString(), isFile);
-            } catch (ServerException e) {
-                LOG.error(e.getMessage(), e);
-            }
         }
     }
 

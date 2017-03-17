@@ -29,7 +29,6 @@ import org.eclipse.che.api.vfs.impl.file.FileTreeWatcher;
 import org.eclipse.che.api.vfs.impl.file.FileWatcherNotificationHandler;
 import org.eclipse.che.api.vfs.impl.file.LocalVirtualFileSystemProvider;
 import org.eclipse.che.api.vfs.watcher.FileWatcherManager;
-import org.eclipse.che.api.vfs.search.impl.FSLuceneSearcherProvider;
 import org.eclipse.che.api.workspace.shared.dto.ProjectConfigDto;
 import org.eclipse.che.commons.lang.IoUtil;
 import org.eclipse.che.jdt.core.resources.ResourceChangedEvent;
@@ -90,8 +89,7 @@ public abstract class BaseTest {
         Set<PathMatcher> filters = new HashSet<>();
         filters.add(path -> true);
 
-        FSLuceneSearcherProvider sProvider = new FSLuceneSearcherProvider(indexDir, filters);
-        vfsProvider = new LocalVirtualFileSystemProvider(root, sProvider);
+        vfsProvider = new LocalVirtualFileSystemProvider(root);
         ProjectTypeRegistry projectTypeRegistry = new ProjectTypeRegistry(new HashSet<>());
 
         projectTypeRegistry.registerProjectType(new JavaProjectType(new JavaValueProviderFactory()));

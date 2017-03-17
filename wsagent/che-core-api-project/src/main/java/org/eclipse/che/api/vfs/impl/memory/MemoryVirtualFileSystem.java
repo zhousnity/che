@@ -16,7 +16,6 @@ import org.eclipse.che.api.vfs.ArchiverFactory;
 import org.eclipse.che.api.vfs.VirtualFile;
 import org.eclipse.che.api.vfs.VirtualFileSystem;
 import org.eclipse.che.api.vfs.search.Searcher;
-import org.eclipse.che.api.vfs.search.SearcherProvider;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,19 +30,17 @@ public class MemoryVirtualFileSystem implements VirtualFileSystem {
     private static final AtomicInteger ID = new AtomicInteger();
 
     private final ArchiverFactory                                 archiverFactory;
-    private final SearcherProvider                                searcherProvider;
     private final AbstractVirtualFileSystemProvider.CloseCallback closeCallback;
     private final int id = ID.incrementAndGet();
 
     private VirtualFile root;
 
-    public MemoryVirtualFileSystem(ArchiverFactory archiverFactory, SearcherProvider searcherProvider) {
-        this(archiverFactory, searcherProvider, null);
+    public MemoryVirtualFileSystem(ArchiverFactory archiverFactory) {
+        this(archiverFactory, null);
     }
 
-    MemoryVirtualFileSystem(ArchiverFactory archiverFactory, SearcherProvider searcherProvider, AbstractVirtualFileSystemProvider.CloseCallback closeCallback) {
+    MemoryVirtualFileSystem(ArchiverFactory archiverFactory, AbstractVirtualFileSystemProvider.CloseCallback closeCallback) {
         this.archiverFactory = archiverFactory;
-        this.searcherProvider = searcherProvider;
         this.closeCallback = closeCallback;
         root = new MemoryVirtualFile(this);
     }
@@ -56,20 +53,9 @@ public class MemoryVirtualFileSystem implements VirtualFileSystem {
     @Override
     public void close() throws ServerException {
         root = null;
-        if (searcherProvider != null) {
-            Searcher searcher = searcherProvider.getSearcher(this, false);
-            if (searcher != null) {
-                searcher.close();
-            }
-        }
         if (closeCallback != null) {
             closeCallback.onClose();
         }
-    }
-
-    @Override
-    public SearcherProvider getSearcherProvider() {
-        return searcherProvider;
     }
 
     @Override

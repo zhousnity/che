@@ -22,7 +22,6 @@ import org.eclipse.che.api.core.model.project.NewProjectConfig;
 import org.eclipse.che.api.core.model.project.ProjectConfig;
 import org.eclipse.che.api.core.model.project.SourceStorage;
 import org.eclipse.che.api.core.model.project.type.ProjectType;
-import org.eclipse.che.api.core.notification.EventService;
 import org.eclipse.che.api.core.util.LineConsumerFactory;
 import org.eclipse.che.api.project.server.RegisteredProject.Problem;
 import org.eclipse.che.api.project.server.handlers.CreateProjectHandler;
@@ -43,13 +42,11 @@ import org.eclipse.che.api.vfs.impl.file.FileTreeWatcher;
 import org.eclipse.che.api.vfs.impl.file.FileWatcherNotificationHandler;
 import org.eclipse.che.api.vfs.impl.file.FileWatcherNotificationListener;
 import org.eclipse.che.api.vfs.search.Searcher;
-import org.eclipse.che.api.vfs.search.SearcherProvider;
 import org.eclipse.che.api.vfs.watcher.FileWatcherManager;
 import org.eclipse.che.commons.lang.concurrent.LoggingUncaughtExceptionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -138,15 +135,6 @@ public class ProjectManager {
 
     public FolderEntry getProjectsRoot() throws ServerException {
         return new FolderEntry(vfs.getRoot(), projectRegistry);
-    }
-
-    public Searcher getSearcher() throws NotFoundException, ServerException {
-        final SearcherProvider provider = vfs.getSearcherProvider();
-        if (provider == null) {
-            throw new NotFoundException("SearcherProvider is not defined in VFS");
-        }
-
-        return provider.getSearcher(vfs);
     }
 
     public void addWatchListener(FileWatcherNotificationListener listener) {

@@ -14,7 +14,6 @@ import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.vfs.AbstractVirtualFileSystemProvider;
 import org.eclipse.che.api.vfs.ArchiverFactory;
 import org.eclipse.che.api.vfs.VirtualFileSystem;
-import org.eclipse.che.api.vfs.search.SearcherProvider;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -26,18 +25,15 @@ import java.nio.file.Files;
 @Singleton
 public class LocalVirtualFileSystemProvider extends AbstractVirtualFileSystemProvider {
     private final File             rootDirectory;
-    private final SearcherProvider searcherProvider;
 
     @Inject
-    public LocalVirtualFileSystemProvider(@Named("che.user.workspaces.storage") File rootDirectory,
-                                          SearcherProvider searcherProvider) throws IOException {
+    public LocalVirtualFileSystemProvider(@Named("che.user.workspaces.storage") File rootDirectory) throws IOException {
         this.rootDirectory = rootDirectory;
-        this.searcherProvider = searcherProvider;
         Files.createDirectories(rootDirectory.toPath());
     }
 
     @Override
     protected VirtualFileSystem createVirtualFileSystem(CloseCallback closeCallback) throws ServerException {
-        return new LocalVirtualFileSystem(rootDirectory, new ArchiverFactory(), searcherProvider, closeCallback);
+        return new LocalVirtualFileSystem(rootDirectory, new ArchiverFactory(), closeCallback);
     }
 }

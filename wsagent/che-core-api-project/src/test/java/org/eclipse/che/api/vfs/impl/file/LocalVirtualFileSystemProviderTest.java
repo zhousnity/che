@@ -12,7 +12,6 @@ package org.eclipse.che.api.vfs.impl.file;
 
 import org.eclipse.che.api.vfs.AbstractVirtualFileSystemProvider;
 import org.eclipse.che.api.vfs.VirtualFileSystem;
-import org.eclipse.che.api.vfs.search.SearcherProvider;
 import org.eclipse.che.commons.lang.IoUtil;
 import org.eclipse.che.commons.lang.NameGenerator;
 import org.junit.After;
@@ -39,7 +38,7 @@ public class LocalVirtualFileSystemProviderTest {
         File targetDir = new File(Thread.currentThread().getContextClassLoader().getResource(".").getPath()).getParentFile();
         fsRootDirectory = new File(targetDir, NameGenerator.generate("index-root", 4));
         assertTrue(fsRootDirectory.mkdir());
-        fileSystemProvider = new LocalVirtualFileSystemProvider(fsRootDirectory, mock(SearcherProvider.class));
+        fileSystemProvider = new LocalVirtualFileSystemProvider(fsRootDirectory);
     }
 
     @After

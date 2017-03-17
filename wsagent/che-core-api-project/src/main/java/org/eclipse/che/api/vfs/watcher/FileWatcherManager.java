@@ -15,14 +15,10 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Named;
 import javax.inject.Singleton;
-import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.function.Consumer;
-
-import static org.eclipse.che.api.vfs.watcher.FileWatcherUtils.toNormalPath;
 
 /**
  * Facade for all dynamic file watcher system related operations.
@@ -35,17 +31,17 @@ public class FileWatcherManager {
     private static final Logger LOG = LoggerFactory.getLogger(FileWatcherManager.class);
 
     private final FileWatcherByPathValue   fileWatcherByPathValue;
+    private final PathResolver             pathResolver;
     private final FileWatcherByPathMatcher fileWatcherByPathMatcher;
     private final FileWatcherService       service;
-    private final Path                     root;
 
     @Inject
-    public FileWatcherManager(@Named("che.user.workspaces.storage") File root, FileWatcherByPathValue watcherByPathValue,
+    public FileWatcherManager(PathResolver pathResolver, FileWatcherByPathValue watcherByPathValue,
                               FileWatcherByPathMatcher watcherByPathMatcher, FileWatcherService service) {
+        this.pathResolver = pathResolver;
         this.fileWatcherByPathMatcher = watcherByPathMatcher;
         this.fileWatcherByPathValue = watcherByPathValue;
         this.service = service;
-        this.root = root.toPath().normalize().toAbsolutePath();
     }
 
     /**
@@ -79,7 +75,7 @@ public class FileWatcherManager {
      * consumers to a single path.
      *
      * @param path
-     *         absolute internal path
+     *         absolute external path
      * @param create
      *         consumer for create event
      * @param modify
@@ -92,7 +88,8 @@ public class FileWatcherManager {
     public int registerByPath(String path, Consumer<String> create, Consumer<String> modify, Consumer<String> delete) {
         LOG.debug("Registering operations to an item with path '{}'", path);
 
-        return fileWatcherByPathValue.watch(toNormalPath(root, path), create, modify, delete);
+        Path internalPath = pathResolver.toInternalPath(path);
+        return fileWatcherByPathValue.watch(internalPath, create, modify, delete);
     }
 
     /**
@@ -129,7 +126,7 @@ public class FileWatcherManager {
      * consumers to a single path matcher.
      *
      * @param matcher
-     *         absolute internal path
+     *         internal path matcher
      * @param create
      *         consumer for create event
      * @param modify

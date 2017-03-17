@@ -27,7 +27,6 @@ import org.eclipse.che.api.vfs.VirtualFile;
 import org.eclipse.che.api.vfs.VirtualFileFilter;
 import org.eclipse.che.api.vfs.VirtualFileVisitor;
 import org.eclipse.che.api.vfs.search.Searcher;
-import org.eclipse.che.api.vfs.search.SearcherProvider;
 import org.eclipse.che.commons.lang.IoUtil;
 import org.eclipse.che.commons.lang.NameGenerator;
 import org.eclipse.che.commons.lang.Pair;
@@ -88,14 +87,10 @@ public class LocalVirtualFileTest {
         assertionHelper = new LocalVirtualFileAssertionHelper(testDirectory);
 
         archiverFactory = mock(ArchiverFactory.class);
-        SearcherProvider searcherProvider = mock(SearcherProvider.class);
         fileSystem = new LocalVirtualFileSystem(testDirectory,
                                                 archiverFactory,
-                                                searcherProvider,
                                                 mock(AbstractVirtualFileSystemProvider.CloseCallback.class));
         searcher = mock(Searcher.class);
-        when(searcherProvider.getSearcher(eq(fileSystem), eq(true))).thenReturn(searcher);
-        when(searcherProvider.getSearcher(eq(fileSystem))).thenReturn(searcher);
     }
 
     @After
@@ -1638,134 +1633,6 @@ public class LocalVirtualFileTest {
         VirtualFile folderA = root.createFolder("a");
         VirtualFile folderB = root.createFolder("b");
         assertTrue(folderA.compareTo(folderB) < 0);
-    }
-
-    @Test
-    public void addsNewlyCreatedFileInSearcher() throws Exception {
-        VirtualFile file = getRoot().createFile(generateFileName(), DEFAULT_CONTENT);
-        verify(searcher).add(file);
-    }
-
-    @Test
-    public void addsFileThatCopiedFromOtherFileInSearcher() throws Exception {
-        VirtualFile file = getRoot().createFile(generateFileName(), DEFAULT_CONTENT);
-        VirtualFile folder = getRoot().createFolder(generateFolderName());
-        Mockito.reset(searcher);
-        VirtualFile copy = file.copyTo(folder);
-        verify(searcher).add(copy);
-    }
-
-    @Test
-    public void addsFolderThatCopiedFromOtherFolderInSearcher() throws Exception {
-        VirtualFile folder = getRoot().createFolder(generateFolderName());
-        VirtualFile newParent = getRoot().createFolder(generateFolderName());
-        VirtualFile copy = folder.copyTo(newParent);
-        verify(searcher).add(copy);
-    }
-
-    @Test
-    public void doesNotAddNewlyCreatedFolderInSearcher() throws Exception {
-        VirtualFile folder = getRoot().createFolder(generateFolderName());
-        verify(searcher, never()).add(folder);
-    }
-
-    @Test
-    public void removesDeletedFileFromSearcher() throws Exception {
-        VirtualFile file = getRoot().createFile(generateFileName(), DEFAULT_CONTENT);
-        String path = file.getPath().toString();
-        file.delete();
-        verify(searcher).delete(path, true);
-    }
-
-    @Test
-    public void removesDeletedFolderFromSearcher() throws Exception {
-        VirtualFile folder = getRoot().createFolder(generateFolderName());
-        String path = folder.getPath().toString();
-        folder.delete();
-        verify(searcher).delete(path, false);
-    }
-
-    @Test
-    public void updatesFileInSearcherWhenContentUpdatedByStream() throws Exception {
-        VirtualFile file = getRoot().createFile(generateFileName(), "");
-        file.updateContent(new ByteArrayInputStream(DEFAULT_CONTENT_BYTES));
-        verify(searcher).update(file);
-    }
-
-    @Test
-    public void updatesFileInSearcherWhenContentUpdatedByBytes() throws Exception {
-        VirtualFile file = getRoot().createFile(generateFileName(), "");
-        file.updateContent(DEFAULT_CONTENT_BYTES);
-        verify(searcher).update(file);
-    }
-
-    @Test
-    public void updatesFileInSearcherWhenContentUpdatedByString() throws Exception {
-        VirtualFile file = getRoot().createFile(generateFileName(), "");
-        file.updateContent(DEFAULT_CONTENT);
-        verify(searcher).update(file);
-    }
-
-    @Test
-    public void updatesFileInSearcherWhenItIsRenamed() throws Exception {
-        VirtualFile file = getRoot().createFile(generateFileName(), DEFAULT_CONTENT);
-        String oldPath = file.getPath().toString();
-        Mockito.reset(searcher);
-        VirtualFile renamed = file.rename("new_name");
-        verify(searcher).add(renamed);
-        verify(searcher).delete(oldPath, true);
-    }
-
-    @Test
-    public void updatesFolderInSearcherWhenItIsRenamed() throws Exception {
-        VirtualFile folder = getRoot().createFolder(generateFolderName());
-        String oldPath = folder.getPath().toString();
-        Mockito.reset(searcher);
-        VirtualFile renamed = folder.rename("new_name");
-        verify(searcher).add(renamed);
-        verify(searcher).delete(oldPath, false);
-    }
-
-    @Test
-    public void updatesFileInSearcherWhenItIsMoved() throws Exception {
-        VirtualFile file = getRoot().createFile(generateFileName(), DEFAULT_CONTENT);
-        VirtualFile newParent = getRoot().createFolder(generateFolderName());
-        String oldPath = file.getPath().toString();
-        Mockito.reset(searcher);
-        VirtualFile moved = file.moveTo(newParent);
-        verify(searcher).add(moved);
-        verify(searcher).delete(oldPath, true);
-    }
-
-    @Test
-    public void updatesFolderInSearcherWhenItIsMoved() throws Exception {
-        VirtualFile folder = getRoot().createFolder(generateFileName());
-        VirtualFile newParent = getRoot().createFolder(generateFolderName());
-        String oldPath = folder.getPath().toString();
-        Mockito.reset(searcher);
-        VirtualFile moved = folder.moveTo(newParent);
-        verify(searcher).add(moved);
-        verify(searcher).delete(oldPath, false);
-    }
-
-    @Test
-    public void addFolderInSearcherAfterExtractZipArchive() throws Exception {
-        VirtualFile folder = getRoot().createFolder(generateFolderName());
-        Mockito.reset(searcher);
-        Archiver archiver = mock(Archiver.class);
-        when(archiverFactory.createArchiver(eq(folder), eq("zip"))).thenReturn(archiver);
-        folder.unzip(new ByteArrayInputStream(new byte[0]), false, 0);
-        verify(searcher).add(folder);
-    }
-
-    @Test
-    public void addFolderInSearcherAfterExtractTarArchive() throws Exception {
-        VirtualFile folder = getRoot().createFolder(generateFolderName());
-        Mockito.reset(searcher);
-        Archiver archiver = mock(Archiver.class);
-        when(archiverFactory.createArchiver(eq(folder), eq("tar"))).thenReturn(archiver);
-        folder.untar(new ByteArrayInputStream(new byte[0]), false, 0);
-        verify(searcher).add(folder);
     }
 
     private VirtualFile getRoot() {

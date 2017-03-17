@@ -14,51 +14,56 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 
-import org.eclipse.che.api.vfs.VirtualFile;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.ByteArrayInputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Valeriy Svydenko
  */
 @RunWith(DataProviderRunner.class)
-public class MediaTypeFilterTest {
-
+public class WrongMediaTypeMatcherTest {
+    private WrongMediaTypeMatcher wrongMediaTypeMatcher;
 
     @DataProvider
     public static Object[][] testData() throws Exception {
+        Path tempI = Files.createTempFile("1", ".tmp");
+        Files.write(tempI, "to be or not to be".getBytes());
+
+        Path tempII = Files.createTempFile("1", ".tmp");
+        Files.write(tempI, "<html><head></head></html>".getBytes());
+
+        Path tempIII = Files.createTempFile("1", ".tmp");
+        Files.write(tempI, "<a><b/></a>".getBytes());
+
+        Path tempIV = Files.createTempFile("1", ".tmp");
+        Files.write(tempI, "public class SomeClass {}".getBytes());
+
+        Path tempV = Files.createTempFile("1", ".tmp");
+        Files.write(tempI, new byte[10]);
+
         return new Object[][]{
-       {virtualFileWithContent("to be or not to be".getBytes()), false},
-       {virtualFileWithContent("<html><head></head></html>".getBytes()), false},
-       {virtualFileWithContent("<a><b/></a>".getBytes()), false},
-       {virtualFileWithContent("public class SomeClass {}".getBytes()), false},
-       {virtualFileWithContent(new byte[10]), true}
+                {tempI, false},
+                {tempII, false},
+                {tempIII, false},
+                {tempIV, false},
+                {tempV, true}
         };
     }
 
-    private static VirtualFile virtualFileWithContent(byte[] content) throws Exception {
-        VirtualFile virtualFile = mock(VirtualFile.class);
-        when(virtualFile.getContent()).thenReturn(new ByteArrayInputStream(content));
-        return virtualFile;
-    }
-
-    private MediaTypeFilter mediaTypeFilter;
-
     @Before
     public void setUp() throws Exception {
-        mediaTypeFilter = new MediaTypeFilter();
+        wrongMediaTypeMatcher = new WrongMediaTypeMatcher();
     }
 
     @UseDataProvider("testData")
     @Test
-    public void testFilesShouldAccepted(VirtualFile virtualFile, boolean expectedResult) throws Exception {
-        assertEquals(expectedResult, mediaTypeFilter.accept(virtualFile));
+    public void testFilesShouldAccepted(Path path, boolean expectedResult) throws Exception {
+        assertEquals(expectedResult, wrongMediaTypeMatcher.matches(path));
     }
 }

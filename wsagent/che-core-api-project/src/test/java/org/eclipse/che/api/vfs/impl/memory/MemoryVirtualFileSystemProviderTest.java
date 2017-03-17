@@ -12,7 +12,6 @@ package org.eclipse.che.api.vfs.impl.memory;
 
 import org.eclipse.che.api.vfs.AbstractVirtualFileSystemProvider;
 import org.eclipse.che.api.vfs.VirtualFileSystem;
-import org.eclipse.che.api.vfs.search.SearcherProvider;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,7 +29,7 @@ public class MemoryVirtualFileSystemProviderTest {
 
     @Before
     public void setUp() throws Exception {
-        fileSystemProvider = new MemoryVirtualFileSystemProvider(mock(SearcherProvider.class));
+        fileSystemProvider = new MemoryVirtualFileSystemProvider();
     }
 
     @Test

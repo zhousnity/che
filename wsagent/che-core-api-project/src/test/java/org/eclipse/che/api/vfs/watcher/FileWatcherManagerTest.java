@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.eclipse.che.api.vfs.watcher;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -23,7 +22,6 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.function.Consumer;
 
-import static org.eclipse.che.api.vfs.watcher.FileWatcherUtils.toNormalPath;
 import static org.mockito.Mockito.verify;
 
 /**
@@ -43,9 +41,10 @@ public class FileWatcherManagerTest {
     FileWatcherByPathMatcher fileWatcherByPathMatcher;
     @Mock
     FileWatcherService       service;
+    @Mock
+    PathResolver             pathResolver;
 
     FileWatcherManager manager;
-
     @Mock
     Consumer<String> create;
     @Mock
@@ -57,7 +56,7 @@ public class FileWatcherManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        manager = new FileWatcherManager(rootFolder.getRoot(), fileWatcherByPathValue, fileWatcherByPathMatcher, service);
+        manager = new FileWatcherManager(pathResolver, fileWatcherByPathValue, fileWatcherByPathMatcher, service);
     }
 
     @Test
@@ -78,7 +77,7 @@ public class FileWatcherManagerTest {
     public void shouldWatchByPath() throws Exception {
         manager.registerByPath(PATH, create, modify, delete);
 
-        Path path = toNormalPath(rootFolder.getRoot().toPath(), PATH);
+        Path path = pathResolver.toInternalPath(PATH);
 
         verify(fileWatcherByPathValue).watch(path, create, modify, delete);
     }

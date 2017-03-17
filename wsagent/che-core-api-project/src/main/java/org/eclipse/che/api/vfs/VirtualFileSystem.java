@@ -11,7 +11,6 @@
 package org.eclipse.che.api.vfs;
 
 import org.eclipse.che.api.core.ServerException;
-import org.eclipse.che.api.vfs.search.SearcherProvider;
 
 /**
  * Attaches any point on backend filesystem some VirtualFile (root folder).
@@ -29,12 +28,6 @@ public interface VirtualFileSystem {
      * @return root folder of virtual file system
      */
     VirtualFile getRoot();
-
-    /**
-     * Get searcher provider associated with this VirtualFileSystem. Method may return {@code null} if implementation doesn't support
-     * searching.
-     */
-    SearcherProvider getSearcherProvider();
 
     /** Release used resources, e.g. clear caches, searcher index, etc */
     void close() throws ServerException;

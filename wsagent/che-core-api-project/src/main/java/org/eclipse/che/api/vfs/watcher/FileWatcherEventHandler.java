@@ -14,9 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Singleton;
-import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.util.Map;
@@ -31,7 +29,6 @@ import java.util.function.Predicate;
 
 import static com.google.common.collect.Sets.newHashSet;
 import static java.nio.file.Files.isDirectory;
-import static org.eclipse.che.api.vfs.watcher.FileWatcherUtils.toInternalPath;
 
 @Singleton
 public class FileWatcherEventHandler {
@@ -41,11 +38,11 @@ public class FileWatcherEventHandler {
 
     private final Map<Path, Set<FileWatcherOperation>> operations = new ConcurrentHashMap<>();
 
-    private final File root;
+    private final PathResolver pathResolver;
 
     @Inject
-    public FileWatcherEventHandler(@Named("che.user.workspaces.storage") File root) {
-        this.root = root;
+    public FileWatcherEventHandler(PathResolver pathResolver) {
+        this.pathResolver = pathResolver;
     }
 
     /**
@@ -120,7 +117,7 @@ public class FileWatcherEventHandler {
      */
     void handle(Path path, WatchEvent.Kind<?> kind) {
         Path dir = path.getParent();
-        String internalPath = toInternalPath(root.toPath(), path);
+        String externalPath = pathResolver.toExternalPath(path);
         Set<FileWatcherOperation> dirOperations = operations.get(dir);
         Set<FileWatcherOperation> itemOperations = operations.get(path);
 
@@ -129,7 +126,7 @@ public class FileWatcherEventHandler {
                          .map(it -> it.get(kind))
                          .filter(Optional::isPresent)
                          .map(Optional::get)
-                         .forEach(it -> it.accept(internalPath));
+                         .forEach(it -> it.accept(externalPath));
         }
 
         if (itemOperations != null) {
@@ -137,7 +134,7 @@ public class FileWatcherEventHandler {
                           .map(it -> it.get(kind))
                           .filter(Optional::isPresent)
                           .map(Optional::get)
-                          .forEach(it -> it.accept(internalPath));
+                          .forEach(it -> it.accept(externalPath));
         }
     }
 }

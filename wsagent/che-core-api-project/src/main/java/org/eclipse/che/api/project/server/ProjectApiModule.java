@@ -24,16 +24,15 @@ import org.eclipse.che.api.project.server.importer.ProjectImportersService;
 import org.eclipse.che.api.project.server.type.BaseProjectType;
 import org.eclipse.che.api.project.server.type.InitBaseProjectTypeHandler;
 import org.eclipse.che.api.project.server.type.ProjectTypeDef;
-import org.eclipse.che.api.vfs.VirtualFileFilter;
 import org.eclipse.che.api.vfs.VirtualFileSystemProvider;
 import org.eclipse.che.api.vfs.impl.file.DefaultFileWatcherNotificationHandler;
 import org.eclipse.che.api.vfs.impl.file.FileWatcherNotificationHandler;
 import org.eclipse.che.api.vfs.impl.file.LocalVirtualFileSystemProvider;
 import org.eclipse.che.api.vfs.impl.file.event.detectors.EditorFileTracker;
 import org.eclipse.che.api.vfs.impl.file.event.detectors.ProjectTreeTracker;
-import org.eclipse.che.api.vfs.search.MediaTypeFilter;
-import org.eclipse.che.api.vfs.search.SearcherProvider;
-import org.eclipse.che.api.vfs.search.impl.FSLuceneSearcherProvider;
+import org.eclipse.che.api.vfs.search.LuceneSearcher;
+import org.eclipse.che.api.vfs.search.Searcher;
+import org.eclipse.che.api.vfs.search.WrongMediaTypeMatcher;
 import org.eclipse.che.api.vfs.watcher.FileTreeWalker;
 import org.eclipse.che.api.vfs.watcher.FileWatcherByPathMatcher;
 import org.eclipse.che.api.vfs.watcher.IndexedFileCreateConsumer;
@@ -77,17 +76,14 @@ public class ProjectApiModule extends AbstractModule {
 
         bind(WorkspaceProjectsSyncer.class).to(WorkspaceHolder.class);
 
-        // configure VFS
-        Multibinder<VirtualFileFilter> filtersMultibinder =
-                newSetBinder(binder(), VirtualFileFilter.class, Names.named("vfs.index_filter"));
-
-        filtersMultibinder.addBinding().to(MediaTypeFilter.class);
+        Multibinder<PathMatcher> indexExcludes = newSetBinder(binder(), PathMatcher.class, Names.named("che.fs.index.excludes"));
+        indexExcludes.addBinding().to(WrongMediaTypeMatcher.class);
 
         Multibinder<PathMatcher> excludeMatcher = newSetBinder(binder(), PathMatcher.class, Names.named("vfs.index_filter_matcher"));
         Multibinder<PathMatcher> fileWatcherExcludes =
                 newSetBinder(binder(), PathMatcher.class, Names.named("che.user.workspaces.storage.excludes"));
 
-        bind(SearcherProvider.class).to(FSLuceneSearcherProvider.class);
+        bind(Searcher.class).to(LuceneSearcher.class);
         bind(VirtualFileSystemProvider.class).to(LocalVirtualFileSystemProvider.class);
 
         bind(FileWatcherNotificationHandler.class).to(DefaultFileWatcherNotificationHandler.class);

@@ -13,7 +13,6 @@ package org.eclipse.che.api.vfs.impl.memory;
 import org.eclipse.che.api.vfs.AbstractVirtualFileSystemProvider;
 import org.eclipse.che.api.vfs.ArchiverFactory;
 import org.eclipse.che.api.vfs.search.Searcher;
-import org.eclipse.che.api.vfs.search.SearcherProvider;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,11 +29,9 @@ public class MemoryVirtualFileSystemTest {
 
     @Before
     public void setUp() throws Exception {
-        SearcherProvider searcherProvider = mock(SearcherProvider.class);
         searcher = mock(Searcher.class);
         closeCallback = mock(AbstractVirtualFileSystemProvider.CloseCallback.class);
-        fileSystem = new MemoryVirtualFileSystem(mock(ArchiverFactory.class), searcherProvider, closeCallback);
-        when(searcherProvider.getSearcher(eq(fileSystem), anyBoolean())).thenReturn(searcher);
+        fileSystem = new MemoryVirtualFileSystem(mock(ArchiverFactory.class), closeCallback);
     }
 
     @Test
@@ -46,6 +43,5 @@ public class MemoryVirtualFileSystemTest {
     @Test
     public void closesSearcherWhenFileSystemClosed() throws Exception {
         fileSystem.close();
-        verify(searcher).close();
     }
 }

@@ -11,76 +11,52 @@
 package org.eclipse.che.api.vfs.search;
 
 import org.eclipse.che.api.core.ServerException;
-import org.eclipse.che.api.vfs.VirtualFile;
-import org.eclipse.che.api.vfs.VirtualFileFilter;
 
-/**
- * @deprecated VFS components are now considered deprecated and will be replaced by standard JDK routines.
- */
-@Deprecated
+import java.nio.file.Path;
+
 public interface Searcher {
     /**
-     * Return paths of matched items on virtual filesystem.
+     * Return paths of matched items in internal representation
+     *
+     * @param query
+     *         query expression
+     * @return results of search
+     *
+     * @exception ServerException
+     */
+    SearchResult internalSearch(QueryExpression query) throws ServerException;
+
+    /**
+     * Return paths of matched items in external representation
      *
      * @param query
      *         query expression
      * @return results of search
      * @throws ServerException
-     *         if an error occurs
      */
-    SearchResult search(QueryExpression query) throws ServerException;
+    SearchResult externalSearch(QueryExpression query) throws ServerException;
 
     /**
      * Add VirtualFile to index.
      *
-     * @param virtualFile
-     *         VirtualFile to add
-     * @throws ServerException
-     *         if an error occurs
+     * @param path
+     *         path of file
      */
-    void add(VirtualFile virtualFile) throws ServerException;
+    void add(Path path);
 
     /**
      * Delete VirtualFile from index.
      *
      * @param path
-     *         path of VirtualFile
-     * @throws ServerException
-     *         if an error occurs
+     *          path of file
      */
-    void delete(String path, boolean isFile) throws ServerException;
+    void delete(Path path);
 
     /**
      * Updated indexed VirtualFile.
      *
-     * @param virtualFile
-     *         VirtualFile to add
-     * @throws ServerException
-     *         if an error occurs
+     * @param path
+     *          path of file
      */
-    void update(VirtualFile virtualFile) throws ServerException;
-
-    /** Close Searcher. */
-    void close();
-
-    boolean isClosed();
-
-    /**
-     * Add filter to prevent adding files in index.
-     *
-     * @param indexFilter
-     *         file filter
-     * @return {@code true} if filter accepted and {@code false} otherwise, e.g. if filter already added
-     */
-    boolean addIndexFilter(VirtualFileFilter indexFilter);
-
-    /**
-     * Remove filter to prevent adding files in index.
-     *
-     * @param indexFilter
-     *         file filter
-     * @return {@code true} if filter successfully removed and {@code false} otherwise, e.g. if filter was not added before with method
-     * {@link #addIndexFilter(VirtualFileFilter)}
-     */
-    boolean removeIndexFilter(VirtualFileFilter indexFilter);
+    void update(Path path);
 }

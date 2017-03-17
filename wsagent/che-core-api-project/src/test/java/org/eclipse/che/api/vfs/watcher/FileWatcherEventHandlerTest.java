@@ -24,7 +24,6 @@ import java.util.function.Consumer;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
-import static org.eclipse.che.api.vfs.watcher.FileWatcherUtils.toInternalPath;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -47,6 +46,8 @@ public class FileWatcherEventHandlerTest {
     Consumer<String> modify;
     @Mock
     Consumer<String> delete;
+    @Mock
+    PathResolver     pathResolver;
 
     Path root;
 
@@ -54,7 +55,7 @@ public class FileWatcherEventHandlerTest {
     public void setUp() throws Exception {
         root = rootFolder.getRoot().toPath();
 
-        handler = new FileWatcherEventHandler(rootFolder.getRoot());
+        handler = new FileWatcherEventHandler(pathResolver);
     }
 
     @Test
@@ -64,7 +65,7 @@ public class FileWatcherEventHandlerTest {
 
         handler.handle(path, ENTRY_CREATE);
 
-        verify(create).accept(toInternalPath(root, path));
+        verify(create).accept(pathResolver.toExternalPath(path));
     }
 
     @Test
@@ -74,7 +75,7 @@ public class FileWatcherEventHandlerTest {
 
         handler.handle(path, ENTRY_MODIFY);
 
-        verify(modify).accept(toInternalPath(root, path));
+        verify(modify).accept(pathResolver.toExternalPath(path));
     }
 
     @Test
@@ -84,7 +85,7 @@ public class FileWatcherEventHandlerTest {
 
         handler.handle(path, ENTRY_DELETE);
 
-        verify(delete).accept(toInternalPath(root, path));
+        verify(delete).accept(pathResolver.toExternalPath(path));
     }
 
     @Test
@@ -95,7 +96,7 @@ public class FileWatcherEventHandlerTest {
 
         handler.handle(path, ENTRY_CREATE);
 
-        verify(create, times(2)).accept(toInternalPath(root, path));
+        verify(create, times(2)).accept(pathResolver.toExternalPath(path));
     }
 
     @Test
@@ -106,7 +107,7 @@ public class FileWatcherEventHandlerTest {
 
         handler.handle(path, ENTRY_CREATE);
 
-        verify(create, never()).accept(toInternalPath(root, path));
+        verify(create, never()).accept(pathResolver.toExternalPath(path));
     }
 
     @Test
@@ -118,7 +119,7 @@ public class FileWatcherEventHandlerTest {
 
         handler.handle(path, ENTRY_CREATE);
 
-        verify(create, never()).accept(toInternalPath(root, path));
+        verify(create, never()).accept(pathResolver.toExternalPath(path));
     }
 
     @Test
@@ -130,6 +131,6 @@ public class FileWatcherEventHandlerTest {
 
         handler.handle(path, ENTRY_CREATE);
 
-        verify(create).accept(toInternalPath(root, path));
+        verify(create).accept(pathResolver.toExternalPath(path));
     }
 }

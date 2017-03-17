@@ -109,7 +109,7 @@ public class TestUtils {
      */
     public static VirtualFileSystem createVirtualFileSystem() throws Exception {
         File rootDirectory = java.nio.file.Files.createTempDirectory(null).toFile();
-        VirtualFileSystemProvider vfsProvider = new LocalVirtualFileSystemProvider(rootDirectory, null);
+        VirtualFileSystemProvider vfsProvider = new LocalVirtualFileSystemProvider(rootDirectory);
         return vfsProvider.getVirtualFileSystem();
     }
 

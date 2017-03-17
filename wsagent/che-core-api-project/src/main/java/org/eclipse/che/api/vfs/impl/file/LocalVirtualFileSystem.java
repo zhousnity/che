@@ -32,8 +32,6 @@ import org.eclipse.che.api.vfs.PathLockFactory;
 import org.eclipse.che.api.vfs.VirtualFile;
 import org.eclipse.che.api.vfs.VirtualFileFilter;
 import org.eclipse.che.api.vfs.VirtualFileSystem;
-import org.eclipse.che.api.vfs.search.Searcher;
-import org.eclipse.che.api.vfs.search.SearcherProvider;
 import org.eclipse.che.api.vfs.util.DeleteOnCloseFileInputStream;
 import org.eclipse.che.commons.lang.IoUtil;
 import org.eclipse.che.commons.lang.NameGenerator;
@@ -122,7 +120,6 @@ public class LocalVirtualFileSystem implements VirtualFileSystem {
 
     private final File                                            ioRoot;
     private final ArchiverFactory                                 archiverFactory;
-    private final SearcherProvider                                searcherProvider;
     private final AbstractVirtualFileSystemProvider.CloseCallback closeCallback;
 
     /* NOTE -- This does not related to virtual file system locking in any kind. -- */
@@ -139,11 +136,9 @@ public class LocalVirtualFileSystem implements VirtualFileSystem {
     @SuppressWarnings("unchecked")
     public LocalVirtualFileSystem(File ioRoot,
                                   ArchiverFactory archiverFactory,
-                                  SearcherProvider searcherProvider,
                                   AbstractVirtualFileSystemProvider.CloseCallback closeCallback) {
         this.ioRoot = ioRoot;
         this.archiverFactory = archiverFactory;
-        this.searcherProvider = searcherProvider;
         this.closeCallback = closeCallback;
 
         root = new LocalVirtualFile(ioRoot, Path.ROOT, this);
@@ -170,19 +165,8 @@ public class LocalVirtualFileSystem implements VirtualFileSystem {
     }
 
     @Override
-    public SearcherProvider getSearcherProvider() {
-        return searcherProvider;
-    }
-
-    @Override
     public void close() throws ServerException {
         cleanUpCaches();
-        if (searcherProvider != null) {
-            Searcher searcher = searcherProvider.getSearcher(this, false);
-            if (searcher != null) {
-                searcher.close();
-            }
-        }
         if (closeCallback != null) {
             closeCallback.onClose();
         }
@@ -309,8 +293,6 @@ public class LocalVirtualFileSystem implements VirtualFileSystem {
                 doUpdateContent(newVirtualFile, content);
             }
 
-            addInSearcher(newVirtualFile);
-
             return newVirtualFile;
         } else {
             throw new ForbiddenException("Unable create new file. Item specified as parent is not a folder");
@@ -359,9 +341,6 @@ public class LocalVirtualFileSystem implements VirtualFileSystem {
             }
 
             doCopy(source, destination);
-
-            addInSearcher(destination);
-
             return destination;
         } else {
             throw new ForbiddenException("Unable copy item. Item specified as parent is not a folder");
@@ -421,12 +400,10 @@ public class LocalVirtualFileSystem implements VirtualFileSystem {
             }
 
             doCopy(virtualFile, newVirtualFile);
-            addInSearcher(newVirtualFile);
 
             final Path path = virtualFile.getPath();
             final boolean isFile = virtualFile.isFile();
             doDelete(virtualFile, lockToken);
-            deleteInSearcher(path, isFile);
 
             return newVirtualFile;
         }
@@ -477,12 +454,10 @@ public class LocalVirtualFileSystem implements VirtualFileSystem {
         }
 
         doCopy(virtualFile, newVirtualFile);
-        addInSearcher(newVirtualFile);
 
         final Path path = virtualFile.getPath();
         final boolean isFile = virtualFile.isFile();
         doDelete(virtualFile, lockToken);
-        deleteInSearcher(path, isFile);
 
         return newVirtualFile;
     }
@@ -530,7 +505,6 @@ public class LocalVirtualFileSystem implements VirtualFileSystem {
             } finally {
                 lock.release();
             }
-            updateInSearcher(virtualFile);
         } else {
             throw new ForbiddenException(String.format("Unable update content. Item '%s' is not file", virtualFile.getPath()));
         }
@@ -556,8 +530,6 @@ public class LocalVirtualFileSystem implements VirtualFileSystem {
         final boolean isFile = virtualFile.isFile();
 
         doDelete(virtualFile, lockToken);
-
-        deleteInSearcher(path, isFile);
     }
 
     private void doDelete(LocalVirtualFile virtualFile, String lockToken) throws ForbiddenException, ServerException {
@@ -615,7 +587,6 @@ public class LocalVirtualFileSystem implements VirtualFileSystem {
 
         if (parent.isFolder()) {
             extract(archiverFactory.createArchiver(parent, "zip"), zipped, overwrite, stripNumber);
-            addInSearcher(parent);
         } else {
             throw new ForbiddenException(String.format("Unable import zip content. Item '%s' is not a folder", parent.getPath()));
         }
@@ -640,7 +611,6 @@ public class LocalVirtualFileSystem implements VirtualFileSystem {
 
         if (parent.isFolder()) {
             extract(archiverFactory.createArchiver(parent, "tar"), tarArchive, overwrite, stripNumber);
-            addInSearcher(parent);
         } else {
             throw new ForbiddenException(String.format("Unable import tar archive. Item '%s' is not a folder", parent.getPath()));
         }
@@ -926,37 +896,6 @@ public class LocalVirtualFileSystem implements VirtualFileSystem {
     private void checkName(String name) throws ServerException {
         if (name == null || name.trim().isEmpty()) {
             throw new ServerException("Item's name is not set");
-        }
-    }
-
-
-    private void addInSearcher(LocalVirtualFile newVirtualFile) {
-        if (searcherProvider != null) {
-            try {
-                searcherProvider.getSearcher(this).add(newVirtualFile);
-            } catch (ServerException e) {
-                LOG.error(e.getMessage(), e);
-            }
-        }
-    }
-
-    private void updateInSearcher(LocalVirtualFile virtualFile) {
-        if (searcherProvider != null) {
-            try {
-                searcherProvider.getSearcher(this).update(virtualFile);
-            } catch (ServerException e) {
-                LOG.error(e.getMessage(), e);
-            }
-        }
-    }
-
-    private void deleteInSearcher(Path path, boolean isFile) {
-        if (searcherProvider != null) {
-            try {
-                searcherProvider.getSearcher(this).delete(path.toString(), isFile);
-            } catch (ServerException e) {
-                LOG.error(e.getMessage(), e);
-            }
         }
     }
 }

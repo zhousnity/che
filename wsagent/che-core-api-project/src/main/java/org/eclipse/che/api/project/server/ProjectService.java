@@ -109,14 +109,17 @@ public class ProjectService extends Service {
     private final EventService                eventService;
     private final ProjectServiceLinksInjector projectServiceLinksInjector;
     private final String                      workspace;
+    private final Searcher                    searcher;
 
     @Inject
     public ProjectService(ProjectManager projectManager,
                           EventService eventService,
-                          ProjectServiceLinksInjector projectServiceLinksInjector) {
+                          ProjectServiceLinksInjector projectServiceLinksInjector,
+                          Searcher searcher) {
         this.projectManager = projectManager;
         this.eventService = eventService;
         this.projectServiceLinksInjector = projectServiceLinksInjector;
+        this.searcher = searcher;
         this.workspace = WorkspaceIdProvider.getWorkspaceId();
     }
 
@@ -865,14 +868,6 @@ public class ProjectService extends Service {
                                                                                      ForbiddenException,
                                                                                      ConflictException,
                                                                                      ServerException {
-        final Searcher searcher;
-        try {
-            searcher = projectManager.getSearcher();
-        } catch (NotFoundException e) {
-            LOG.warn(e.getLocalizedMessage());
-            return Collections.emptyList();
-        }
-
         if (skipCount < 0) {
             throw new ConflictException(String.format("Invalid 'skipCount' parameter: %d.", skipCount));
         }
@@ -884,7 +879,7 @@ public class ProjectService extends Service {
                 .setMaxItems(maxItems)
                 .setSkipCount(skipCount);
 
-        final SearchResult result = searcher.search(expr);
+        final SearchResult result = searcher.externalSearch(expr);
         final List<SearchResultEntry> searchResultEntries = result.getResults();
         final List<ItemReference> items = new ArrayList<>(searchResultEntries.size());
         final FolderEntry root = projectManager.getProjectsRoot();

@@ -49,8 +49,10 @@ import org.eclipse.che.api.vfs.impl.file.DefaultFileWatcherNotificationHandler;
 import org.eclipse.che.api.vfs.impl.file.FileTreeWatcher;
 import org.eclipse.che.api.vfs.impl.file.FileWatcherNotificationHandler;
 import org.eclipse.che.api.vfs.impl.file.LocalVirtualFileSystemProvider;
-import org.eclipse.che.api.vfs.search.impl.FSLuceneSearcherProvider;
+import org.eclipse.che.api.vfs.search.LuceneSearcher;
+import org.eclipse.che.api.vfs.search.Searcher;
 import org.eclipse.che.api.vfs.watcher.FileWatcherManager;
+import org.eclipse.che.api.vfs.watcher.PathResolver;
 import org.eclipse.che.api.workspace.shared.dto.ProjectConfigDto;
 import org.eclipse.che.api.workspace.shared.dto.SourceStorageDto;
 import org.eclipse.che.api.workspace.shared.dto.WorkspaceConfigDto;
@@ -110,6 +112,7 @@ import java.util.stream.IntStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static com.google.common.collect.Sets.newHashSet;
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 import static javax.ws.rs.HttpMethod.DELETE;
@@ -154,47 +157,48 @@ public class ProjectServiceTest {
 
     private static final String EXCLUDE_SEARCH_PATH = ".codenvy";
 
-    private ProjectManager              pm;
-    private ResourceLauncher            launcher;
-    private ProjectHandlerRegistry      phRegistry;
-    private ProjectServiceLinksInjector projectServiceLinksInjector;
+    protected ProjectRegistry     projectRegistry;
+    protected ProjectTypeRegistry ptRegistry;
+    File root;
+    private ProjectManager   pm;
+    private ResourceLauncher launcher;
 
     private org.eclipse.che.commons.env.EnvironmentContext env;
 
     private List<ProjectConfigDto> projects;
 
     @Mock
-    private UserDao                userDao;
+    private UserDao                     userDao;
     @Mock
-    private WorkspaceDto           usersWorkspaceMock;
+    private WorkspaceDto                usersWorkspaceMock;
     @Mock
-    private WorkspaceConfigDto     workspaceConfigMock;
+    private WorkspaceConfigDto          workspaceConfigMock;
     @Mock
-    private HttpJsonRequestFactory httpJsonRequestFactory;
+    private HttpJsonRequestFactory      httpJsonRequestFactory;
     @Mock
-    private HttpJsonResponse       httpJsonResponse;
+    private HttpJsonResponse            httpJsonResponse;
     @Mock
-    private FileWatcherManager     fileWatcherManager;
+    private FileWatcherManager          fileWatcherManager;
+    private ProjectHandlerRegistry      phRegistry;
+    private ProjectServiceLinksInjector projectServiceLinksInjector;
 
     protected LocalVirtualFileSystemProvider vfsProvider;
-
-    private ProjectImporterRegistry importerRegistry;
-
-    protected ProjectRegistry projectRegistry;
-
-    protected ProjectTypeRegistry ptRegistry;
+    private   PathResolver                   pathResolver;
+    private   ProjectImporterRegistry        importerRegistry;
+    private   Searcher                       searcher;
 
     @BeforeMethod
     public void setUp() throws Exception {
 
         WorkspaceProjectsSyncer workspaceHolder = new WsAgentTestBase.TestWorkspaceHolder();
 
-        File root = new File(FS_PATH);
+        root = new File(FS_PATH);
 
         if (root.exists()) {
             IoUtil.deleteRecursive(root);
         }
         root.mkdir();
+        pathResolver = new PathResolver(root);
 
 
         File indexDir = new File(INDEX_PATH);
@@ -214,9 +218,7 @@ public class ProjectServiceTest {
             return false;
         });
 
-        FSLuceneSearcherProvider sProvider = new FSLuceneSearcherProvider(indexDir, filters);
-
-        vfsProvider = new LocalVirtualFileSystemProvider(root, sProvider);
+        vfsProvider = new LocalVirtualFileSystemProvider(root);
 
         final EventService eventService = new EventService();
 
@@ -269,6 +271,9 @@ public class ProjectServiceTest {
 //                                                             .withHref(apiEndpoint + "/workspace/" + workspace + "/project")
 //                                                             .withMethod(PUT)));
 
+        searcher = new LuceneSearcher(pathResolver, indexDir, newHashSet());
+        ((LuceneSearcher)searcher).initialize();
+
         DependencySupplierImpl dependencies = new DependencySupplierImpl();
 
 
@@ -279,6 +284,7 @@ public class ProjectServiceTest {
         dependencies.addInstance(ProjectHandlerRegistry.class, phRegistry);
         dependencies.addInstance(EventService.class, eventService);
         dependencies.addInstance(ProjectServiceLinksInjector.class, projectServiceLinksInjector);
+        dependencies.addInstance(Searcher.class, searcher);
 
         ResourceBinder resources = new ResourceBinderImpl();
         ProviderBinder providers = ProviderBinder.getInstance();
@@ -1735,9 +1741,17 @@ public class ProjectServiceTest {
     @Test
     public void testSearchByName() throws Exception {
         RegisteredProject myProject = pm.getProject("my_project");
-        myProject.getBaseFolder().createFolder("a/b").createFile("test.txt", "hello".getBytes(Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("x/y").createFile("test.txt", "test".getBytes(Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("c").createFile("exclude", "test".getBytes(Charset.defaultCharset()));
+        FileEntry fileI = myProject.getBaseFolder().createFolder("a/b").createFile("test.txt", "hello".getBytes(Charset.defaultCharset()));
+        FileEntry fileII = myProject.getBaseFolder().createFolder("x/y").createFile("test.txt", "test".getBytes(Charset.defaultCharset()));
+        FileEntry fileIII = myProject.getBaseFolder().createFolder("c").createFile("exclude", "test".getBytes(Charset.defaultCharset()));
+
+        java.nio.file.Path pathI = java.nio.file.Paths.get(root.getAbsolutePath(), fileI.getPath().toString());
+        java.nio.file.Path pathII = java.nio.file.Paths.get(root.getAbsolutePath(), fileII.getPath().toString());
+        java.nio.file.Path pathIII = java.nio.file.Paths.get(root.getAbsolutePath(), fileIII.getPath().toString());
+
+        searcher.add(pathI);
+        searcher.add(pathII);
+        searcher.add(pathIII);
 
         ContainerResponse response = launcher.service(GET,
                                                       "http://localhost:8080/api/project/search/my_project?name=test.txt",
@@ -1757,9 +1771,18 @@ public class ProjectServiceTest {
     @Test
     public void testSearchByText() throws Exception {
         RegisteredProject myProject = pm.getProject("my_project");
-        myProject.getBaseFolder().createFolder("a/b").createFile("test.txt", "hello".getBytes(Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("x/y").createFile("__test.txt", "searchhit".getBytes(Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("c").createFile("_test", "searchhit".getBytes(Charset.defaultCharset()));
+        FileEntry fileI = myProject.getBaseFolder().createFolder("a/b").createFile("test.txt", "hello".getBytes(Charset.defaultCharset()));
+        FileEntry fileII =
+                myProject.getBaseFolder().createFolder("x/y").createFile("__test.txt", "searchhit".getBytes(Charset.defaultCharset()));
+        FileEntry fileIII = myProject.getBaseFolder().createFolder("c").createFile("_test", "searchhit".getBytes(Charset.defaultCharset()));
+
+        java.nio.file.Path pathI = java.nio.file.Paths.get(root.getAbsolutePath(), fileI.getPath().toString());
+        java.nio.file.Path pathII = java.nio.file.Paths.get(root.getAbsolutePath(), fileII.getPath().toString());
+        java.nio.file.Path pathIII = java.nio.file.Paths.get(root.getAbsolutePath(), fileIII.getPath().toString());
+
+        searcher.add(pathI);
+        searcher.add(pathII);
+        searcher.add(pathIII);
 
         ContainerResponse response = launcher.service(GET,
                                                       "http://localhost:8080/api/project/search/my_project?text=searchhit",
@@ -1776,9 +1799,17 @@ public class ProjectServiceTest {
     @Test
     public void testSearchByTextWhenFileWasNotIndexed() throws Exception {
         RegisteredProject myProject = pm.getProject("my_project");
-        myProject.getBaseFolder().createFolder("a/b").createFile("test.txt", "hello".getBytes(Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("x/y").createFile("__test.txt", "searchhit".getBytes(Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder(EXCLUDE_SEARCH_PATH).createFile("_test", "searchhit".getBytes(Charset.defaultCharset()));
+        FileEntry fileI = myProject.getBaseFolder().createFolder("a/b").createFile("test.txt", "hello".getBytes(Charset.defaultCharset()));
+        FileEntry fileII =
+                myProject.getBaseFolder().createFolder("x/y").createFile("__test.txt", "searchhit".getBytes(Charset.defaultCharset()));
+        FileEntry fileIII = myProject.getBaseFolder().createFolder(EXCLUDE_SEARCH_PATH)
+                                     .createFile("_test", "searchhit".getBytes(Charset.defaultCharset()));
+
+        java.nio.file.Path pathI = java.nio.file.Paths.get(root.getAbsolutePath(), fileI.getPath().toString());
+        java.nio.file.Path pathII = java.nio.file.Paths.get(root.getAbsolutePath(), fileII.getPath().toString());
+
+        searcher.add(pathI);
+        searcher.add(pathII);
 
         ContainerResponse response = launcher.service(GET,
                                                       "http://localhost:8080/api/project/search/my_project?text=searchhit",
@@ -1803,13 +1834,24 @@ public class ProjectServiceTest {
                                "to" + URL_ENCODED_SPACE +
                                "be" + URL_ENCODED_QUOTES;
         RegisteredProject myProject = pm.getProject("my_project");
-        myProject.getBaseFolder().createFolder("x/y")
-                 .createFile("containsSearchText.txt", "To be or not to be that is the question".getBytes(
-                         Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("a/b").createFile("test.txt", "Pay attention! To be or to be that is the question".getBytes(
-                Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("c")
-                 .createFile("_test", "Pay attention! To be or to not be that is the question".getBytes(Charset.defaultCharset()));
+        FileEntry fileI = myProject.getBaseFolder().createFolder("x/y")
+                                   .createFile("containsSearchText.txt", "To be or not to be that is the question".getBytes(
+                                           Charset.defaultCharset()));
+        FileEntry fileII = myProject.getBaseFolder().createFolder("a/b")
+                                    .createFile("test.txt", "Pay attention! To be or to be that is the question".getBytes(
+                                            Charset.defaultCharset()));
+        FileEntry fileIII = myProject.getBaseFolder().createFolder("c")
+                                     .createFile("_test",
+                                                 "Pay attention! To be or to not be that is the question"
+                                                         .getBytes(Charset.defaultCharset()));
+
+        java.nio.file.Path pathI = java.nio.file.Paths.get(root.getAbsolutePath(), fileI.getPath().toString());
+        java.nio.file.Path pathII = java.nio.file.Paths.get(root.getAbsolutePath(), fileII.getPath().toString());
+        java.nio.file.Path pathIII = java.nio.file.Paths.get(root.getAbsolutePath(), fileIII.getPath().toString());
+
+        searcher.add(pathI);
+        searcher.add(pathII);
+        searcher.add(pathIII);
 
         ContainerResponse response =
                 launcher.service(GET, "http://localhost:8080/api/project/search/my_project" + queryToSearch,
@@ -1831,15 +1873,25 @@ public class ProjectServiceTest {
                                "the" + URL_ENCODED_QUOTES + URL_ENCODED_SPACE + AND_OPERATOR + URL_ENCODED_SPACE +
                                "question" + URL_ENCODED_ASTERISK;
         RegisteredProject myProject = pm.getProject("my_project");
-        myProject.getBaseFolder().createFolder("x/y")
-                 .createFile("containsSearchText.txt", "To be or not to be that is the question".getBytes(
-                         Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("a/b")
-                 .createFile("containsSearchTextAlso.txt",
-                             "Pay attention! To be or not to be that is the questionS".getBytes(Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("c")
-                 .createFile("notContainsSearchText",
-                             "Pay attention! To be or to not be that is the questEon".getBytes(Charset.defaultCharset()));
+        FileEntry fileI = myProject.getBaseFolder().createFolder("x/y")
+                                   .createFile("containsSearchText.txt", "To be or not to be that is the question".getBytes(
+                                           Charset.defaultCharset()));
+        FileEntry fileII = myProject.getBaseFolder().createFolder("a/b")
+                                    .createFile("containsSearchTextAlso.txt",
+                                                "Pay attention! To be or not to be that is the questionS"
+                                                        .getBytes(Charset.defaultCharset()));
+        FileEntry fileIII = myProject.getBaseFolder().createFolder("c")
+                                     .createFile("notContainsSearchText",
+                                                 "Pay attention! To be or to not be that is the questEon"
+                                                         .getBytes(Charset.defaultCharset()));
+
+        java.nio.file.Path pathI = java.nio.file.Paths.get(root.getAbsolutePath(), fileI.getPath().toString());
+        java.nio.file.Path pathII = java.nio.file.Paths.get(root.getAbsolutePath(), fileII.getPath().toString());
+        java.nio.file.Path pathIII = java.nio.file.Paths.get(root.getAbsolutePath(), fileIII.getPath().toString());
+
+        searcher.add(pathI);
+        searcher.add(pathII);
+        searcher.add(pathIII);
 
         ContainerResponse response =
                 launcher.service(GET, "http://localhost:8080/api/project/search/my_project" + queryToSearch,
@@ -1860,15 +1912,23 @@ public class ProjectServiceTest {
         String queryToSearch = "?text=" +
                                "question" + URL_ENCODED_ASTERISK;
         RegisteredProject myProject = pm.getProject("my_project");
-        myProject.getBaseFolder().createFolder("x/y")
-                 .createFile("containsSearchText.txt", "To be or not to be that is the question".getBytes(
-                         Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("a/b")
-                 .createFile("containsSearchTextAlso.txt",
-                             "Pay attention! To be or not to be that is the questionS".getBytes(Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("c")
-                 .createFile("notContainsSearchText",
-                             "Pay attention! To be or to not be that is the questEon".getBytes(Charset.defaultCharset()));
+        FileEntry fileI = myProject.getBaseFolder().createFolder("x/y")
+                                  .createFile("containsSearchText.txt", "To be or not to be that is the question".getBytes(
+                                          Charset.defaultCharset()));
+        FileEntry fileII = myProject.getBaseFolder().createFolder("a/b")
+                                  .createFile("containsSearchTextAlso.txt",
+                                              "Pay attention! To be or not to be that is the questionS".getBytes(Charset.defaultCharset()));
+        FileEntry fileIII = myProject.getBaseFolder().createFolder("c")
+                                  .createFile("notContainsSearchText",
+                                              "Pay attention! To be or to not be that is the questEon".getBytes(Charset.defaultCharset()));
+
+        java.nio.file.Path pathI = java.nio.file.Paths.get(root.getAbsolutePath(), fileI.getPath().toString());
+        java.nio.file.Path pathII = java.nio.file.Paths.get(root.getAbsolutePath(), fileII.getPath().toString());
+        java.nio.file.Path pathIII = java.nio.file.Paths.get(root.getAbsolutePath(), fileIII.getPath().toString());
+
+        searcher.add(pathI);
+        searcher.add(pathII);
+        searcher.add(pathIII);
 
         ContainerResponse response =
                 launcher.service(GET, "http://localhost:8080/api/project/search/my_project" + queryToSearch,
@@ -1890,14 +1950,24 @@ public class ProjectServiceTest {
                                "question" + URL_ENCODED_SPACE + NOT_OPERATOR + URL_ENCODED_SPACE + URL_ENCODED_QUOTES +
                                "attention!" + URL_ENCODED_QUOTES;
         RegisteredProject myProject = pm.getProject("my_project");
-        myProject.getBaseFolder().createFolder("x/y")
-                 .createFile("containsSearchText.txt", "To be or not to be that is the question".getBytes(
-                         Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("b")
-                 .createFile("notContainsSearchText",
-                             "Pay attention! To be or not to be that is the question".getBytes(Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("c").createFile("alsoNotContainsSearchText",
-                                                               "To be or to not be that is the ...".getBytes(Charset.defaultCharset()));
+        FileEntry fileI = myProject.getBaseFolder().createFolder("x/y")
+                                   .createFile("containsSearchText.txt", "To be or not to be that is the question".getBytes(
+                                           Charset.defaultCharset()));
+        FileEntry fileII = myProject.getBaseFolder().createFolder("b")
+                                    .createFile("notContainsSearchText",
+                                                "Pay attention! To be or not to be that is the question"
+                                                        .getBytes(Charset.defaultCharset()));
+        FileEntry fileIII = myProject.getBaseFolder().createFolder("c").createFile("alsoNotContainsSearchText",
+                                                                                   "To be or to not be that is the ..."
+                                                                                           .getBytes(Charset.defaultCharset()));
+
+        java.nio.file.Path pathI = java.nio.file.Paths.get(root.getAbsolutePath(), fileI.getPath().toString());
+        java.nio.file.Path pathII = java.nio.file.Paths.get(root.getAbsolutePath(), fileII.getPath().toString());
+        java.nio.file.Path pathIII = java.nio.file.Paths.get(root.getAbsolutePath(), fileIII.getPath().toString());
+
+        searcher.add(pathI);
+        searcher.add(pathII);
+        searcher.add(pathIII);
 
         ContainerResponse response =
                 launcher.service(GET, "http://localhost:8080/api/project/search/my_project" + queryToSearch,
@@ -1925,9 +1995,14 @@ public class ProjectServiceTest {
                                URL_ENCODED_BACKSLASH + '?' + "action=createProject" +
                                URL_ENCODED_BACKSLASH + ':' + "projectName=test";
         RegisteredProject myProject = pm.getProject("my_project");
-        myProject.getBaseFolder().createFolder("x/y")
-                 .createFile("test.txt",
-                             "http://localhost:8080/ide/dev6?action=createProject:projectName=test".getBytes(Charset.defaultCharset()));
+        FileEntry fileI = myProject.getBaseFolder().createFolder("x/y")
+                                  .createFile("test.txt",
+                                              "http://localhost:8080/ide/dev6?action=createProject:projectName=test"
+                                                      .getBytes(Charset.defaultCharset()));
+
+        java.nio.file.Path pathI = java.nio.file.Paths.get(root.getAbsolutePath(), fileI.getPath().toString());
+
+        searcher.add(pathI);
 
         ContainerResponse response = launcher.service(GET, "http://localhost:8080/api/project/search/my_project" + queryToSearch,
                                                       "http://localhost:8080/api", null, null, null);
@@ -1943,9 +2018,17 @@ public class ProjectServiceTest {
     @Test
     public void testSearchByNameAndText() throws Exception {
         RegisteredProject myProject = pm.getProject("my_project");
-        myProject.getBaseFolder().createFolder("a/b").createFile("test.txt", "test".getBytes(Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("x/y").createFile("test.txt", "test".getBytes(Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("c").createFile("test", "test".getBytes(Charset.defaultCharset()));
+        FileEntry fileI = myProject.getBaseFolder().createFolder("a/b").createFile("test.txt", "test".getBytes(Charset.defaultCharset()));
+        FileEntry fileII = myProject.getBaseFolder().createFolder("x/y").createFile("test.txt", "test".getBytes(Charset.defaultCharset()));
+        FileEntry fileIII = myProject.getBaseFolder().createFolder("c").createFile("test", "test".getBytes(Charset.defaultCharset()));
+
+        java.nio.file.Path pathI = java.nio.file.Paths.get(root.getAbsolutePath(), fileI.getPath().toString());
+        java.nio.file.Path pathII = java.nio.file.Paths.get(root.getAbsolutePath(), fileII.getPath().toString());
+        java.nio.file.Path pathIII = java.nio.file.Paths.get(root.getAbsolutePath(), fileIII.getPath().toString());
+
+        searcher.add(pathI);
+        searcher.add(pathII);
+        searcher.add(pathIII);
 
         ContainerResponse response = launcher.service(GET,
                                                       "http://localhost:8080/api/project/search/my_project?text=test&name=test.txt",
@@ -1967,9 +2050,17 @@ public class ProjectServiceTest {
     @Test
     public void testSearchFromWSRoot() throws Exception {
         RegisteredProject myProject = pm.getProject("my_project");
-        myProject.getBaseFolder().createFolder("a/b").createFile("test", "test".getBytes(Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("x/y").createFile("test", "test".getBytes(Charset.defaultCharset()));
-        myProject.getBaseFolder().createFolder("c").createFile("test.txt", "test".getBytes(Charset.defaultCharset()));
+        FileEntry fileI = myProject.getBaseFolder().createFolder("a/b").createFile("test", "test".getBytes(Charset.defaultCharset()));
+        FileEntry fileII = myProject.getBaseFolder().createFolder("x/y").createFile("test", "test".getBytes(Charset.defaultCharset()));
+        FileEntry fileIII = myProject.getBaseFolder().createFolder("c").createFile("test.txt", "test".getBytes(Charset.defaultCharset()));
+
+        java.nio.file.Path pathI = java.nio.file.Paths.get(root.getAbsolutePath(), fileI.getPath().toString());
+        java.nio.file.Path pathII = java.nio.file.Paths.get(root.getAbsolutePath(), fileII.getPath().toString());
+        java.nio.file.Path pathIII = java.nio.file.Paths.get(root.getAbsolutePath(), fileIII.getPath().toString());
+
+        searcher.add(pathI);
+        searcher.add(pathII);
+        searcher.add(pathIII);
 
         ContainerResponse response = launcher.service(GET,
                                                       "http://localhost:8080/api/project/search/?text=test&name=test.txt",
