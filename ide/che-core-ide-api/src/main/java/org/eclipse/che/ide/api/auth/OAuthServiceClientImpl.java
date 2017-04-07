@@ -11,11 +11,17 @@
 package org.eclipse.che.ide.api.auth;
 
 import org.eclipse.che.api.auth.shared.dto.OAuthToken;
-import org.eclipse.che.ide.rest.AsyncRequestCallback;
+import org.eclipse.che.api.promises.client.Promise;
+import org.eclipse.che.ide.MimeType;
+import org.eclipse.che.ide.api.app.AppContext;
 import org.eclipse.che.ide.rest.AsyncRequestFactory;
-import org.eclipse.che.ide.rest.RestContext;
+import org.eclipse.che.ide.rest.DtoUnmarshallerFactory;
+import org.eclipse.che.ide.rest.HTTPHeader;
+import org.eclipse.che.ide.rest.Unmarshallable;
+import org.eclipse.che.security.oauth.shared.dto.OAuthAuthenticatorDescriptor;
 
 import javax.inject.Inject;
+import java.util.List;
 
 /**
  * @author Sergii Leschenko
@@ -23,23 +29,34 @@ import javax.inject.Inject;
 public class OAuthServiceClientImpl implements OAuthServiceClient {
     private final AsyncRequestFactory asyncRequestFactory;
     private final String              restContext;
+    private final DtoUnmarshallerFactory unmarshallerFactory;
 
     @Inject
-    public OAuthServiceClientImpl(@RestContext String restContext,
-                                  AsyncRequestFactory asyncRequestFactory) {
+    public OAuthServiceClientImpl(AppContext appContext,
+                                  AsyncRequestFactory asyncRequestFactory,
+                                  DtoUnmarshallerFactory unmarshallerFactory
+    ) {
         this.asyncRequestFactory = asyncRequestFactory;
-        this.restContext = restContext + "/oauth";
+        this.restContext = appContext.getMasterEndpoint() + "/oauth/";
+        this.unmarshallerFactory = unmarshallerFactory;
     }
 
     @Override
-    public void invalidateToken(String oauthProvider, AsyncRequestCallback<Void> callback) {
-        asyncRequestFactory.createDeleteRequest(restContext + "/token?oauth_provider=" + oauthProvider)
-                           .send(callback);
+    public Promise<Void> invalidateToken(String oauthProvider) {
+        return asyncRequestFactory.createDeleteRequest(restContext + "token?oauth_provider=" + oauthProvider)
+                .send();
     }
 
     @Override
-    public void getToken(String oauthProvider, AsyncRequestCallback<OAuthToken> callback) {
-        asyncRequestFactory.createGetRequest(restContext + "/token?oauth_provider=" + oauthProvider)
-                           .send(callback);
+    public Promise<OAuthToken> getToken(String oauthProvider) {
+        Unmarshallable<OAuthToken> unmarshaller = unmarshallerFactory.newUnmarshaller(OAuthToken.class);
+        return asyncRequestFactory.createGetRequest(restContext + "token?oauth_provider=" + oauthProvider)
+                .send(unmarshaller);
+    }
+
+    @Override
+    public Promise<List<OAuthAuthenticatorDescriptor>> getRegisteredAuthenticators() {
+        Unmarshallable<List<OAuthAuthenticatorDescriptor>> unmarshallable = unmarshallerFactory.newListUnmarshaller(OAuthAuthenticatorDescriptor.class);
+        return asyncRequestFactory.createGetRequest(restContext).header(HTTPHeader.ACCEPT, MimeType.APPLICATION_JSON).send(unmarshallable);
     }
 }

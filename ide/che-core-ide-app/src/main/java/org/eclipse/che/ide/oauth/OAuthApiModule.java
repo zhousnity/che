@@ -13,9 +13,12 @@ package org.eclipse.che.ide.oauth;
 import com.google.gwt.inject.client.AbstractGinModule;
 import com.google.gwt.inject.client.multibindings.GinMultibinder;
 import com.google.inject.Singleton;
-
+import org.eclipse.che.ide.api.auth.OAuthServiceClient;
+import org.eclipse.che.ide.api.auth.OAuthServiceClientImpl;
 import org.eclipse.che.ide.api.oauth.OAuth2Authenticator;
 import org.eclipse.che.ide.api.oauth.OAuth2AuthenticatorRegistry;
+import org.eclipse.che.ide.api.preferences.PreferencePagePresenter;
+import org.eclipse.che.ide.oauth.settings.OAuthTokenSettingsPresenter;
 
 /**
  * GIN module for configuring OAuth API components.
@@ -30,5 +33,10 @@ public class OAuthApiModule extends AbstractGinModule {
         GinMultibinder.newSetBinder(binder(), OAuth2Authenticator.class).addBinding().to(DefaultOAuthAuthenticatorImpl.class);
 
         bind(OAuth2AuthenticatorRegistry.class).to(OAuth2AuthenticatorRegistryImpl.class).in(Singleton.class);
+
+        bind(OAuthServiceClient.class).to(OAuthServiceClientImpl.class).in(Singleton.class);
+
+        GinMultibinder<PreferencePagePresenter> prefBinder = GinMultibinder.newSetBinder(binder(), PreferencePagePresenter.class);
+        prefBinder.addBinding().to(OAuthTokenSettingsPresenter.class);
     }
 }

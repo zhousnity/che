@@ -8,35 +8,29 @@
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
  *******************************************************************************/
-package org.eclipse.che.ide.api.auth;
+package org.eclipse.che.ide.oauth.settings;
 
 import org.eclipse.che.api.auth.shared.dto.OAuthToken;
-import org.eclipse.che.api.promises.client.Promise;
 import org.eclipse.che.security.oauth.shared.dto.OAuthAuthenticatorDescriptor;
 
-import java.util.List;
-
 /**
- * @author Sergii Leschenko
+ * Data class, contains {@link org.eclipse.che.security.oauth.shared.dto.OAuthAuthenticatorDescriptor} and {@link org.eclipse.che.api.auth.shared.dto.OAuthToken}
  */
-public interface OAuthServiceClient {
+public class OAuthDescriptorWithToken {
 
-    Promise<Void> invalidateToken(String oauthProvider);
-    /**
-     * Gets OAuth token for user.
-     *
-     * @param oauthProvider
-     *         OAuth provider name
-     * @return OAuthToken
-     */
-    Promise<OAuthToken> getToken(String oauthProvider);
+    private final OAuthAuthenticatorDescriptor descriptor;
+    private final OAuthToken token;
 
+    public OAuthDescriptorWithToken(OAuthAuthenticatorDescriptor descriptor, OAuthToken token) {
+        this.descriptor = descriptor;
+        this.token = token;
+    }
 
-    /**
-     * Gets list of installed OAuth authenticators.
-     *
-     * @return list of installed OAuth authenticators
-     */
-    Promise<List<OAuthAuthenticatorDescriptor>> getRegisteredAuthenticators();
+    public OAuthAuthenticatorDescriptor getDescriptor() {
+        return descriptor;
+    }
 
+    public OAuthToken getToken() {
+        return token;
+    }
 }

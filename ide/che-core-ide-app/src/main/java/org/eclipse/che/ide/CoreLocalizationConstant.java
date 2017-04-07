@@ -1048,4 +1048,15 @@ public interface CoreLocalizationConstant extends Messages {
     @Key("export.config.dialog.not.under.vcs.text")
     String exportConfigDialogNotUnderVcsText();
 
+    @Key("oauth.settings.title")
+    String oauthSettingsTitle();
+
+    @Key("oauth.settings.provider.title")
+    String oauthSettingsProviderTitle();
+
+    @Key("oauth.settings.provider.invalidate")
+    String oauthSettingsProviderInvalidate();
+
+    @Key("oauth.invalidate.token.success")
+    String oauthInvalidateTokenSuccess(String p0);
 }
