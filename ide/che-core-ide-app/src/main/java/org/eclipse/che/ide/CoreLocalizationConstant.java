@@ -1048,9 +1048,11 @@ public interface CoreLocalizationConstant extends Messages {
     @Key("export.config.dialog.not.under.vcs.text")
     String exportConfigDialogNotUnderVcsText();
 
-    @Key("oauth.settings.title")
-    String oauthSettingsTitle();
+    @Key("messages.server.failure")
+    String messagesServerFailure();
 
+    @Key("connection.closed.dialog.title")
+    String connectionClosedDialogTitle();
     @Key("oauth.settings.provider.title")
     String oauthSettingsProviderTitle();
 
