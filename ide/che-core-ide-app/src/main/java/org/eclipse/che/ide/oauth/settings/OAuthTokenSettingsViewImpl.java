@@ -11,6 +11,7 @@
 package org.eclipse.che.ide.oauth.settings;
 
 import com.google.gwt.cell.client.ButtonCell;
+import com.google.gwt.dom.client.Style;
 import com.google.gwt.user.cellview.client.CellTable;
 import com.google.gwt.user.cellview.client.Column;
 import com.google.gwt.user.cellview.client.TextColumn;
@@ -37,13 +38,14 @@ public class OAuthTokenSettingsViewImpl implements OAuthTokenSettingsView {
     public OAuthTokenSettingsViewImpl(CellTableResources res, CoreLocalizationConstant constant) {
         authenticatorCellTable = new CellTable<>(15, res);
         authenticatorCellTable.setWidth("100%");
+        authenticatorCellTable.getElement().getStyle().setMarginLeft(14, Style.Unit.PX);
         TextColumn<OAuthDescriptorWithToken> providerColumn = new TextColumn<OAuthDescriptorWithToken>() {
             @Override
             public String getValue(OAuthDescriptorWithToken descriptor) {
                 return descriptor.getDescriptor().getName();
             }
         };
-        authenticatorCellTable.addColumn(providerColumn, constant.oauthSettingsProviderTitle());
+        authenticatorCellTable.addColumn(providerColumn);
 
 
         Column<OAuthDescriptorWithToken, String> invalidateColumn = new Column<OAuthDescriptorWithToken, String>(new ButtonCell()) {
@@ -53,6 +55,8 @@ public class OAuthTokenSettingsViewImpl implements OAuthTokenSettingsView {
             }
         };
         authenticatorCellTable.addColumn(invalidateColumn);
+        authenticatorCellTable.setColumnWidth(invalidateColumn, "50%");
+        providerColumn.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
         invalidateColumn.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
         invalidateColumn.setFieldUpdater((i, obj, val)-> delegate.invalidateTokenForProvider(obj));
     }

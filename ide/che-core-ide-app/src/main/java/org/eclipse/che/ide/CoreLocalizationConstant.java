@@ -1053,12 +1053,16 @@ public interface CoreLocalizationConstant extends Messages {
 
     @Key("connection.closed.dialog.title")
     String connectionClosedDialogTitle();
-    @Key("oauth.settings.provider.title")
-    String oauthSettingsProviderTitle();
 
     @Key("oauth.settings.provider.invalidate")
     String oauthSettingsProviderInvalidate();
 
     @Key("oauth.invalidate.token.success")
     String oauthInvalidateTokenSuccess(String p0);
+
+    @Key("oauth.settings.title")
+    String oauthSettingsTitle();
+
+    @Key("oauth.settings.group")
+    String oauthSettingsGroup();
 }

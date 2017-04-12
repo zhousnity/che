@@ -43,7 +43,7 @@ public class OAuthTokenSettingsPresenter extends AbstractPreferencePagePresenter
                                        OAuthServiceClient serviceClient,
                                        NotificationManager notificationManager,
                                        CoreLocalizationConstant constant) {
-        super(constant.oauthSettingsTitle(), "OAuth");
+        super(constant.oauthSettingsTitle(), constant.oauthSettingsGroup());
         this.view = view;
         this.serviceClient = serviceClient;
         this.notificationManager = notificationManager;
