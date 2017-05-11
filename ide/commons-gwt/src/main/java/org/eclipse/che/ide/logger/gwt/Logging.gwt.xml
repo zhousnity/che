@@ -1,0 +1,14 @@
+<module>
+  <inherits name="org.eclipse.che.ide.logger.impl.LoggingImpl"/>
+  <inherits name="com.google.gwt.logging.Logging"/>
+
+  <source path=""/>
+
+
+  <replace-with class="org.eclipse.che.logging.gwt.GWTLoggerFactory">
+    <when-type-is class="org.slf4j.ILoggerFactory"/>
+    <none>
+      <when-property-is name="gwt.logging.enabled" value="FALSE"/>
+    </none>
+  </replace-with>
+</module>

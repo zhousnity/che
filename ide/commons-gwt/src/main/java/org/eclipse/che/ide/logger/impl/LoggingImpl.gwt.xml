@@ -1,0 +1,5 @@
+<module>
+    <inherits name="org.eclipse.che.ide.logger.API"/>
+
+    <source path=""/>
+</module>
