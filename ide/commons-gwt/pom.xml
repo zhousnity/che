@@ -85,6 +85,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>requirejs</artifactId>
             <scope>runtime</scope>
@@ -123,6 +128,7 @@
                 <configuration>
                     <excludes>
                         <!-- Apache license -->
+                        <exclude>**/org/eclipse/che/ide/logger/**</exclude>
                         <exclude>**/org/eclipse/che/ide/collections/**</exclude>
                         <exclude>**/org/eclipse/che/ide/dto/JsonSerializable.java</exclude>
                         <exclude>**/org/eclipse/che/ide/mvp/**</exclude>
