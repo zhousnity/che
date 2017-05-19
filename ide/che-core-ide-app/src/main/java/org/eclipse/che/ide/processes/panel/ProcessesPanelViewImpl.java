@@ -46,6 +46,7 @@ import org.eclipse.che.ide.ui.tree.SelectionModel;
 import org.eclipse.che.ide.ui.tree.Tree;
 import org.eclipse.che.ide.ui.tree.TreeNodeElement;
 import org.eclipse.che.ide.util.input.SignalEvent;
+import org.eclipse.che.ide.util.loging.Log;
 import org.vectomatic.dom.svg.ui.SVGResource;
 
 import java.util.HashMap;
@@ -436,13 +437,7 @@ public class ProcessesPanelViewImpl extends BaseView<ProcessesPanelView.ActionDe
             subPanel.removeWidget(widgetToShow);
         }
         processWidgets.remove(processId);
-    }
-
-    @Override
-    public void removeWidget(String processId) {
-        WidgetToShow widget = processWidgets.get(processId);
-        hideProcessOutput(processId);
-        widget2Panels.remove(widget);
+        widget2Panels.remove(widgetToShow);
     }
 
     @Override
@@ -497,6 +492,7 @@ public class ProcessesPanelViewImpl extends BaseView<ProcessesPanelView.ActionDe
     public void onResize() {
         for (WidgetToShow widgetToShow : widget2Panels.keySet()) {
             final IsWidget widget = widgetToShow.getWidget();
+            Log.info(getClass(), widget.getClass());
             if (widget instanceof RequiresResize) {
                 ((RequiresResize)widget).onResize();
             }

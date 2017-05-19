@@ -338,7 +338,7 @@ public class ProcessesPanelPresenter extends BasePresenter implements ProcessesP
     @Override
     public void onCloseTerminal(ProcessTreeNode node) {
         closeTerminal(node);
-        view.removeWidget(node.getId());
+        view.hideProcessOutput(node.getId());
     }
 
     @Override
@@ -709,7 +709,7 @@ public class ProcessesPanelPresenter extends BasePresenter implements ProcessesP
 
         consoles.remove(node.getId());
         consoleCommands.remove(console);
-        view.removeWidget(node.getId());
+        view.hideProcessOutput(node.getId());
 
         removeCallback.remove();
 

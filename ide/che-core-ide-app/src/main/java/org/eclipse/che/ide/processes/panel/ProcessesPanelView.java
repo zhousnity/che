@@ -84,9 +84,6 @@ public interface ProcessesPanelView extends View<ProcessesPanelView.ActionDelega
     /** Hides output for process with given ID */
     void hideProcessOutput(String processId);
 
-    /** Removes widget for process with given ID */
-    void removeWidget(String processId);
-
     /** Marks process with a badge in process tree */
     void markProcessHasOutput(String processId);
 
