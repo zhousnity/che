@@ -46,7 +46,7 @@ public class FSLuceneSearcherTest {
     private static final String[] TEST_CONTENT = {
             "Apollo set several major human spaceflight milestones",
             "Maybe you should think twice",
-            "To be or not to be",
+            "To be or not to be beeeee lambergeeene",
             "In early 1961, direct ascent was generally the mission mode in favor at NASA"
     };
 
@@ -191,6 +191,21 @@ public class FSLuceneSearcherTest {
         assertEquals(newArrayList("/folder/xxx.txt"), paths);
     }
 
+    @Test
+    public void searchesByFullTextAndFileName() throws Exception {
+        VirtualFileSystem virtualFileSystem = virtualFileSystem();
+        VirtualFile folder = virtualFileSystem.getRoot().createFolder("folder");
+        folder.createFile("xxx.txt", TEST_CONTENT[2]);
+        folder.createFile("zzz.txt", TEST_CONTENT[2]);
+        searcher.init(virtualFileSystem);
+
+        SearchResult result = searcher.search(new QueryExpression().setText("*be*").setName("xxx.txt").setIncludePositions(true));
+        List<String> paths = result.getFilePaths();
+        assertEquals(newArrayList("/folder/xxx.txt"), paths);
+        assertEquals(result.getResults().get(0).getData().size(), 4);
+
+    }
+
     @DataProvider
     public Object[][] searchByName() {
         return new Object[][]{
@@ -200,7 +215,7 @@ public class FSLuceneSearcherTest {
                 {"file name.txt", "file name"},
                 {"prefixFileName.txt", "prefixF*"},
                 {"name.with.dot.txt", "name.With.Dot.txt"},
-        };
+                };
     }
 
     @Test(dataProvider = "searchByName")
@@ -208,11 +223,11 @@ public class FSLuceneSearcherTest {
         VirtualFileSystem virtualFileSystem = virtualFileSystem();
         VirtualFile folder = virtualFileSystem.getRoot().createFolder("parent/child");
         VirtualFile folder2 = virtualFileSystem.getRoot().createFolder("folder2");
-        folder.createFile(NameGenerator.generate(null,10), TEST_CONTENT[3]);
+        folder.createFile(NameGenerator.generate(null, 10), TEST_CONTENT[3]);
         folder.createFile(fileName, TEST_CONTENT[2]);
-        folder.createFile(NameGenerator.generate(null,10), TEST_CONTENT[1]);
-        folder2.createFile(NameGenerator.generate(null,10), TEST_CONTENT[2]);
-        folder2.createFile(NameGenerator.generate(null,10), TEST_CONTENT[2]);
+        folder.createFile(NameGenerator.generate(null, 10), TEST_CONTENT[1]);
+        folder2.createFile(NameGenerator.generate(null, 10), TEST_CONTENT[2]);
+        folder2.createFile(NameGenerator.generate(null, 10), TEST_CONTENT[2]);
         searcher.init(virtualFileSystem);
 
         List<String> paths = searcher.search(new QueryExpression().setName(searchedFileName)).getFilePaths();
