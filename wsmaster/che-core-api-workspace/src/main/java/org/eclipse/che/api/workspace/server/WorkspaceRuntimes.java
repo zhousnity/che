@@ -80,6 +80,7 @@ public class WorkspaceRuntimes implements EventSubscriber<WorkspaceStatusEvent> 
         this.statuses = new ConcurrentHashMap<>();
         this.eventService = eventService;
         this.sharedPool = sharedPool;
+        this.eventService.subscribe(this);
 
         // TODO: consider extracting to a strategy interface(1. pick the last, 2. fail with conflict)
         Map<String, RuntimeInfrastructure> tmp = new HashMap<>();
