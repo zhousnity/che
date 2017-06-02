@@ -231,6 +231,11 @@ public class WorkspaceRuntimes {
                                                    .withStatus(WorkspaceStatus.RUNNING)
                                                    .withEventType(EventType.RUNNING)
                                                    .withPrevStatus(WorkspaceStatus.STARTING));
+                    LOG.info("Workspace '{}:{}' with id '{}' started by user '{}'",
+                             workspace.getNamespace(),
+                             workspace.getConfig().getName(),
+                             workspace.getId(),
+                             subject.getUserName());
                 } catch (InfrastructureException e) {
                     LOG.error(format("Error occurs on workspace '%s' start. Error: %s", workspaceId, e));
                     new RuntimeException(e);
