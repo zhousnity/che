@@ -579,6 +579,7 @@ public class WorkspaceManager {
             if (includeRuntimes) {
                 workspace.setRuntime(runtime);
             }
+            workspace.setStatus(runtimes.getStatus(workspace.getId()));
         } catch (NotFoundException e) {
             workspace.setStatus(WorkspaceStatus.STOPPED);
         }
@@ -635,6 +636,7 @@ public class WorkspaceManager {
         }
         return workspaceDao.get(wsName, namespace);
     }
+
 
 // FIXME: this code is from master version of runtimes, where
 // WorkspaceRuntimes is responsible for statuses management.

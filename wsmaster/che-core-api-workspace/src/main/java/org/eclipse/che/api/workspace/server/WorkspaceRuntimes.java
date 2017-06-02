@@ -22,6 +22,7 @@ import org.eclipse.che.api.core.model.workspace.WorkspaceStatus;
 import org.eclipse.che.api.core.model.workspace.config.Environment;
 import org.eclipse.che.api.core.model.workspace.runtime.RuntimeIdentity;
 import org.eclipse.che.api.core.notification.EventService;
+import org.eclipse.che.api.core.notification.EventSubscriber;
 import org.eclipse.che.api.workspace.server.model.impl.EnvironmentImpl;
 import org.eclipse.che.api.workspace.server.model.impl.RuntimeImpl;
 import org.eclipse.che.api.workspace.server.spi.InfrastructureException;
@@ -41,7 +42,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -61,13 +61,14 @@ import static java.util.Objects.requireNonNull;
  * @author Alexander Garagatyi
  */
 @Singleton
-public class WorkspaceRuntimes {
+public class WorkspaceRuntimes implements EventSubscriber<WorkspaceStatusEvent> {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkspaceRuntimes.class);
 
     private final ImmutableMap<String, RuntimeInfrastructure> infraByRecipe;
 
     private final ConcurrentMap<String, InternalRuntime> runtimes;
+    private final ConcurrentMap<String, WorkspaceStatus> statuses;
     private final EventService                           eventService;
     private final WorkspaceSharedPool                    sharedPool;
 
@@ -76,6 +77,7 @@ public class WorkspaceRuntimes {
                              Set<RuntimeInfrastructure> infrastructures,
                              WorkspaceSharedPool sharedPool) {
         this.runtimes = new ConcurrentHashMap<>();
+        this.statuses = new ConcurrentHashMap<>();
         this.eventService = eventService;
         this.sharedPool = sharedPool;
 
@@ -320,19 +322,20 @@ public class WorkspaceRuntimes {
      * @param workspaceId
      *         workspace identifier to perform check
      * @return true if workspace is running, otherwise false
+     * @deprecated Use {@link #getStatus(String)}
      */
+    @Deprecated
     public boolean hasRuntime(String workspaceId) {
         return runtimes.containsKey(workspaceId);
     }
 
-    private void doStart(EnvironmentImpl environment,
-                         String workspaceId, String envName,
-                         Map<String, String> options) throws InfrastructureException,
-                                                             NotFoundException,
-                                                             ConflictException,
-                                                             ValidationException,
-                                                             IOException {
-
+    /**
+     * @param workspaceId
+     *         the id of the workspace to get its runtime
+     * @return workspace status
+     */
+    public WorkspaceStatus getStatus(String workspaceId) {
+        return statuses.getOrDefault(workspaceId, WorkspaceStatus.STOPPED);
     }
 
     private static EnvironmentImpl copyEnv(Workspace workspace, String envName) {
@@ -346,6 +349,15 @@ public class WorkspaceRuntimes {
                                                       envName));
         }
         return new EnvironmentImpl(environment);
+    }
+
+    @Override
+    public void onEvent(WorkspaceStatusEvent event) {
+        if (event.getStatus() != WorkspaceStatus.STOPPED) {
+            statuses.put(event.getWorkspaceId(), event.getStatus());
+        } else {
+            statuses.remove(event.getWorkspaceId());
+        }
     }
 
 //    /**
