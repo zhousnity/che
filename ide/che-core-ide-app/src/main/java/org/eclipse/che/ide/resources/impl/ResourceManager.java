@@ -1111,7 +1111,7 @@ public final class ResourceManager {
             final Path[] paths = new Path[references.size()];
 
             for (int i = 0; i < paths.length; i++) {
-                final Path path = Path.valueOf(references.get(i).getPath());
+                final Path path = Path.valueOf(references.get(i).getItemReference().getPath());
                 paths[i] = path;
 
                 if (path.segmentCount() > maxDepth) {

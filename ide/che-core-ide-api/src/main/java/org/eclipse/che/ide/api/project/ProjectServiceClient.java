@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.eclipse.che.ide.api.project;
 
+import org.eclipse.che.api.project.shared.dto.FoundItem;
 import org.eclipse.che.api.project.shared.dto.ItemReference;
 import org.eclipse.che.api.project.shared.dto.SourceEstimation;
 import org.eclipse.che.api.project.shared.dto.TreeElement;
@@ -257,7 +258,7 @@ public interface ProjectServiceClient {
      * @see ItemReference
      * @since 4.4.0
      */
-    Promise<List<ItemReference>> search(QueryExpression expression);
+    Promise<List<FoundItem>> search(QueryExpression expression);
 
     /**
      * Gets list of {@link SourceEstimation} for all supposed project types.

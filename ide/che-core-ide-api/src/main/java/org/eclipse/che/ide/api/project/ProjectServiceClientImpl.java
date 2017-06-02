@@ -16,6 +16,7 @@ import com.google.inject.Inject;
 import org.eclipse.che.api.project.shared.dto.CopyOptions;
 import org.eclipse.che.api.project.shared.dto.ItemReference;
 import org.eclipse.che.api.project.shared.dto.MoveOptions;
+import org.eclipse.che.api.project.shared.dto.FoundItem;
 import org.eclipse.che.api.project.shared.dto.SourceEstimation;
 import org.eclipse.che.api.project.shared.dto.TreeElement;
 import org.eclipse.che.api.promises.client.Promise;
@@ -165,7 +166,7 @@ public class ProjectServiceClientImpl implements ProjectServiceClient {
 
     /** {@inheritDoc} */
     @Override
-    public Promise<List<ItemReference>> search(QueryExpression expression) {
+    public Promise<List<FoundItem>> search(QueryExpression expression) {
         final String url = getBaseUrl() + SEARCH + (isNullOrEmpty(expression.getPath()) ? Path.ROOT : path(expression.getPath()));
 
         StringBuilder queryParameters = new StringBuilder();
@@ -185,7 +186,7 @@ public class ProjectServiceClientImpl implements ProjectServiceClient {
         return reqFactory.createGetRequest(url + queryParameters.toString().replaceFirst("&", "?"))
                          .header(ACCEPT, MimeType.APPLICATION_JSON)
                          .loader(loaderFactory.newLoader("Searching..."))
-                         .send(unmarshaller.newListUnmarshaller(ItemReference.class));
+                         .send(unmarshaller.newListUnmarshaller(FoundItem.class));
     }
 
     /** {@inheritDoc} */

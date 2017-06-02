@@ -34,6 +34,8 @@ import org.eclipse.che.api.project.server.importer.ProjectImportOutputWSLineCons
 import org.eclipse.che.api.project.server.notification.ProjectItemModifiedEvent;
 import org.eclipse.che.api.project.server.type.ProjectTypeResolution;
 import org.eclipse.che.api.project.shared.dto.CopyOptions;
+import org.eclipse.che.api.project.shared.dto.FoundItem;
+import org.eclipse.che.api.project.shared.dto.FoundItemData;
 import org.eclipse.che.api.project.shared.dto.ItemReference;
 import org.eclipse.che.api.project.shared.dto.MoveOptions;
 import org.eclipse.che.api.project.shared.dto.SourceEstimation;
@@ -43,6 +45,7 @@ import org.eclipse.che.api.vfs.search.QueryExpression;
 import org.eclipse.che.api.vfs.search.SearchResult;
 import org.eclipse.che.api.vfs.search.SearchResultEntry;
 import org.eclipse.che.api.vfs.search.Searcher;
+import org.eclipse.che.api.vfs.search.impl.LuceneSearcher;
 import org.eclipse.che.api.workspace.shared.dto.NewProjectConfigDto;
 import org.eclipse.che.api.workspace.shared.dto.ProjectConfigDto;
 import org.eclipse.che.api.workspace.shared.dto.SourceStorageDto;
@@ -856,15 +859,15 @@ public class ProjectService extends Service {
                    @ApiResponse(code = 404, message = "Not found"),
                    @ApiResponse(code = 409, message = "Conflict error"),
                    @ApiResponse(code = 500, message = "Internal Server Error")})
-    public List<ItemReference> search(@ApiParam(value = "Path to resource, i.e. where to search?", required = true)
+    public List<FoundItem> search(@ApiParam(value = "Path to resource, i.e. where to search?", required = true)
                                       @PathParam("path") String path,
-                                      @ApiParam(value = "Resource name")
+                                  @ApiParam(value = "Resource name")
                                       @QueryParam("name") String name,
-                                      @ApiParam(value = "Search keywords")
+                                  @ApiParam(value = "Search keywords")
                                       @QueryParam("text") String text,
-                                      @ApiParam(value = "Maximum items to display. If this parameter is dropped, there are no limits")
+                                  @ApiParam(value = "Maximum items to display. If this parameter is dropped, there are no limits")
                                       @QueryParam("maxItems") @DefaultValue("-1") int maxItems,
-                                      @ApiParam(value = "Skip count")
+                                  @ApiParam(value = "Skip count")
                                       @QueryParam("skipCount") int skipCount) throws NotFoundException,
                                                                                      ForbiddenException,
                                                                                      ConflictException,
@@ -886,22 +889,36 @@ public class ProjectService extends Service {
                 .setName(name)
                 .setText(text)
                 .setMaxItems(maxItems)
-                .setSkipCount(skipCount);
+                .setSkipCount(skipCount)
+                .setIncludePositions(true);
 
         final SearchResult result = searcher.search(expr);
         final List<SearchResultEntry> searchResultEntries = result.getResults();
-        final List<ItemReference> items = new ArrayList<>(searchResultEntries.size());
+        final List<FoundItem> s = new ArrayList<>(searchResultEntries.size());
         final FolderEntry root = projectManager.getProjectsRoot();
 
         for (SearchResultEntry searchResultEntry : searchResultEntries) {
             final VirtualFileEntry child = root.getChild(searchResultEntry.getFilePath());
 
             if (child != null && child.isFile()) {
-                items.add(injectFileLinks(asDto((FileEntry)child)));
+                final ItemReference itemReference = injectFileLinks(asDto((FileEntry)child));
+                final List<LuceneSearcher.OffsetData> datas = searchResultEntry.getData();
+                List<FoundItemData> foundItemDatas = new ArrayList<>(datas.size());
+                for(LuceneSearcher.OffsetData data : datas) {
+                    final FoundItemData foundItemData = DtoFactory.getInstance().createDto(FoundItemData.class).withPhrase(data.phrase)
+                                                                  .withScore(data.score)
+                                                                  .withStartOffset(data.startOffset)
+                                                                  .withEndOffset(data.endOffset);
+                    foundItemDatas.add(foundItemData);
+                }
+                final FoundItem foundItem =
+                        DtoFactory.getInstance().createDto(FoundItem.class);
+
+                s.add(foundItem.withItemReference(itemReference).withFoundItemData(foundItemDatas));
             }
         }
 
-        return items;
+        return s;
     }
 
     private void logProjectCreatedEvent(@NotNull String projectName, @NotNull String projectType) {
