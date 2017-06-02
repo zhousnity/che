@@ -353,6 +353,7 @@ public class WorkspaceRuntimes implements EventSubscriber<WorkspaceStatusEvent> 
 
     @Override
     public void onEvent(WorkspaceStatusEvent event) {
+        LOG.info("onEvent {} ", event);
         if (event.getStatus() != WorkspaceStatus.STOPPED) {
             statuses.put(event.getWorkspaceId(), event.getStatus());
         } else {

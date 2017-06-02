@@ -476,12 +476,6 @@ public class WorkspaceManager {
         workspace.getAttributes().put(UPDATED_ATTRIBUTE_NAME, Long.toString(currentTimeMillis()));
         workspaceDao.update(workspace);
         final String env = firstNonNull(envName, workspace.getConfig().getDefaultEnv());
-        LOG.info("Workspace '{}:{}' with id '{}' started by user '{}'",
-                 workspace.getNamespace(),
-                 workspace.getConfig().getName(),
-                 workspace.getId(),
-                 sessionUserNameOr("undefined"));
-
         return runtimes.startAsync(workspace, env, firstNonNull(options, Collections.emptyMap()))
                        .exceptionally(ex -> {
                            if (workspace.isTemporary()) {
