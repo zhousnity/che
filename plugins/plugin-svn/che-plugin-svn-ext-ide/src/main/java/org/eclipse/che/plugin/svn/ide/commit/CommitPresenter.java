@@ -112,7 +112,7 @@ public class CommitPresenter extends SubversionActionPresenter implements Action
                    cache.put(Changes.ALL, statusItems);
                })
                .catchError(error -> {
-                   notificationManager.notify("Failed to generation change list ", error.getMessage(), FAIL, EMERGE_MODE);
+                   notificationManager.notify(constants.failedToGenerateChangesList(), error.getMessage(), FAIL, EMERGE_MODE);
                });
     }
 

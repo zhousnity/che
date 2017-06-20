@@ -427,6 +427,9 @@ public interface SubversionExtensionLocalizationConstants extends Messages {
     @Key("subversion.accept.theirsFull.label")
     String subversionAcceptTheirsFullLabel();
 
+    @Key("subversion.failed.to.generate.changes.list")
+    String failedToGenerateChangesList();
+
     /** View Constants */
     @Key("button.cancel")
     String buttonCancel();
