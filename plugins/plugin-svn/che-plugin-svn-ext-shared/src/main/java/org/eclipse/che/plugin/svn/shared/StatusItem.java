@@ -10,8 +10,6 @@
  *******************************************************************************/
 package org.eclipse.che.plugin.svn.shared;
 
-import org.eclipse.che.ide.util.loging.Log;
-
 /**
  * Represents the status of a path.
  */
@@ -192,16 +190,13 @@ public class StatusItem {
 
     public StatusItem(final String cliLine) {
         final char[] states = cliLine.substring(0, 7).toCharArray();
-        Log.info(getClass(), "*" + new String(states) + "* Amount of chars in the Array = " + states.length);
 
         fileState = FileState.fromChar(states[0]);
         propertyState = PropertyState.fromChar(states[1]);
         lockState = LockState.fromChar(states[2]);
         historyState = HistoryState.fromChar(states[3]);
         remoteState = RemoteState.fromChar(states[4]);
-        Log.info(getClass(), "*" + states[5] + "*");
         repositoryLockState = RepositoryLockState.fromChar(states[5]);
-        Log.info(getClass(), TreeConflictState.fromChar(' '));
         treeConflictState = TreeConflictState.fromChar(states[6]);
         path = cliLine.substring(8);
     }

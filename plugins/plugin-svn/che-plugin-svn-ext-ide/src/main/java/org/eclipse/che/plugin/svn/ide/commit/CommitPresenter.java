@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkState;
+import static org.eclipse.che.ide.api.notification.StatusNotification.DisplayMode.EMERGE_MODE;
 import static org.eclipse.che.ide.api.notification.StatusNotification.DisplayMode.FLOAT_MODE;
 import static org.eclipse.che.ide.api.notification.StatusNotification.Status.FAIL;
 import static org.eclipse.che.ide.resource.Path.valueOf;
@@ -103,21 +104,15 @@ public class CommitPresenter extends SubversionActionPresenter implements Action
         checkState(project != null);
 
         service.status(project.getLocation(), new Path[0], null, false, false, false, true, false, null)
-               .then(new Operation<CLIOutputResponse>() {
-                   @Override
-                   public void apply(CLIOutputResponse response) throws OperationException {
-                       List<StatusItem> statusItems = parseChangesList(response);
-                       view.setChangesList(statusItems);
-                       view.onShow();
+               .then(response -> {
+                   List<StatusItem> statusItems = parseChangesList(response);
+                   view.setChangesList(statusItems);
+                   view.onShow();
 
-                       cache.put(Changes.ALL, statusItems);
-                   }
+                   cache.put(Changes.ALL, statusItems);
                })
-               .catchError(new Operation<PromiseError>() {
-                   @Override
-                   public void apply(PromiseError error) throws OperationException {
-                       Log.error(CommitPresenter.class, error.getMessage());
-                   }
+               .catchError(error -> {
+                   notificationManager.notify("Failed to generation change list ", error.getMessage(), FAIL, EMERGE_MODE);
                });
     }
 
