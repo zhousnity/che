@@ -16,12 +16,14 @@ import com.google.common.base.Optional;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 
+import org.eclipse.che.api.promises.client.Function;
 import org.eclipse.che.api.promises.client.Promise;
 import org.eclipse.che.ide.api.resources.File;
 import org.eclipse.che.ide.api.resources.marker.Marker;
 import org.eclipse.che.ide.api.resources.marker.PresentableTextMarker;
 import org.eclipse.che.ide.resource.Path;
 import org.eclipse.che.ide.util.TextUtils;
+import org.eclipse.che.ide.util.loging.Log;
 
 /**
  * Default implementation of the {@code File}.
@@ -118,7 +120,12 @@ class FileImpl extends ResourceImpl implements File {
     /** {@inheritDoc} */
     @Override
     public Promise<String> getContent() {
-        return resourceManager.read(this);
+        return resourceManager.read(this).then((Function<String, String>)content -> {
+            Log.info(getClass(), content);
+            setModificationStamp(TextUtils.md5(content));
+            Log.info(getClass(), "get content " + getModificationStamp());
+            return content;
+        });
     }
 
     /** {@inheritDoc} */

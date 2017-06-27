@@ -29,6 +29,7 @@ import org.eclipse.che.ide.api.event.FileContentUpdateHandler;
 import org.eclipse.che.ide.api.notification.NotificationManager;
 import org.eclipse.che.ide.api.resources.File;
 import org.eclipse.che.ide.api.resources.VirtualFile;
+import org.eclipse.che.ide.util.loging.Log;
 
 import javax.validation.constraints.NotNull;
 import java.util.HashMap;
@@ -191,7 +192,8 @@ public class EditorGroupSynchronizationImpl implements EditorGroupSynchronizatio
             return;
         }
 
-        if (!Objects.equals(oldStamp, newStamp)) {
+        Log.info(getClass(), "Stamps: = " + oldStamp + " " + newStamp);
+        if (Objects.equals(oldStamp, newStamp)) {
             replaceContent(document, newContent, oldContent, cursorPosition);
 
             notificationManager.notify("External operation", "File '" + file.getName() + "' is updated", SUCCESS, EMERGE_MODE);
