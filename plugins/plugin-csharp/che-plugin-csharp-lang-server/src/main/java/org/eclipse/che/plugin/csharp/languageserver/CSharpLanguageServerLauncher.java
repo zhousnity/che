@@ -66,6 +66,8 @@ public class CSharpLanguageServerLauncher extends LanguageServerLauncherTemplate
 
     private void restoreDependencies(String projectPath) throws LanguageServerException {
         ProcessBuilder processBuilder = new ProcessBuilder("dotnet", "restore");
+        // fix dotnet 1.0 preview bug https://github.com/dotnet/coreclr/issues/6016
+        processBuilder.environment().put("COMPlus_INTERNAL_ThreadSuspendInjection", "0");
         processBuilder.directory(new File(LanguageServiceUtils.removeUriScheme(projectPath)));
         try {
             Process process = processBuilder.start();
