@@ -15,6 +15,7 @@ import com.google.inject.Singleton;
 
 import org.eclipse.che.api.languageserver.exception.LanguageServerException;
 import org.eclipse.che.api.languageserver.launcher.LanguageServerLauncherTemplate;
+import org.eclipse.che.api.languageserver.launcher.LanguageServerPrepareProjectProvider;
 import org.eclipse.che.api.languageserver.registry.DocumentFilter;
 import org.eclipse.che.api.languageserver.registry.LanguageServerDescription;
 import org.eclipse.che.api.languageserver.service.LanguageServiceUtils;
@@ -30,13 +31,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 
 /**
  * @author Evgen Vidolob
  */
 @Singleton
-public class CSharpLanguageServerLauncher extends LanguageServerLauncherTemplate {
+public class CSharpLanguageServerLauncher extends LanguageServerLauncherTemplate implements LanguageServerPrepareProjectProvider {
     private static final String REGEX = ".*\\.(cs|csx)";
 
 
@@ -51,8 +53,6 @@ public class CSharpLanguageServerLauncher extends LanguageServerLauncherTemplate
 
     @Override
     protected Process startLanguageServerProcess(String projectPath) throws LanguageServerException {
-        restoreDependencies(projectPath);
-
         ProcessBuilder processBuilder = new ProcessBuilder(launchScript.toString());
         processBuilder.redirectInput(ProcessBuilder.Redirect.PIPE);
         processBuilder.redirectOutput(ProcessBuilder.Redirect.PIPE);
@@ -64,15 +64,15 @@ public class CSharpLanguageServerLauncher extends LanguageServerLauncherTemplate
         }
     }
 
-    private void restoreDependencies(String projectPath) throws LanguageServerException {
+    public void prepareProject(int timeOut, String projectPath) throws LanguageServerException {
         ProcessBuilder processBuilder = new ProcessBuilder("dotnet", "restore");
         // fix dotnet 1.0 preview bug https://github.com/dotnet/coreclr/issues/6016
         processBuilder.environment().put("COMPlus_INTERNAL_ThreadSuspendInjection", "0");
         processBuilder.directory(new File(LanguageServiceUtils.removeUriScheme(projectPath)));
         try {
             Process process = processBuilder.start();
-            int resultCode = process.waitFor();
-            if (resultCode != 0) {
+            boolean processExited = process.waitFor(timeOut, TimeUnit.SECONDS);
+            if (!processExited) {
                 String err = IoUtil.readStream(process.getErrorStream());
                 String in = IoUtil.readStream(process.getInputStream());
                 throw new LanguageServerException("Can't restore dependencies. Error: " + err + ". Output: " + in);

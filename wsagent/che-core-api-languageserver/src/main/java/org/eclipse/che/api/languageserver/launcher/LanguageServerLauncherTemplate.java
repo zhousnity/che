@@ -31,6 +31,10 @@ public abstract class LanguageServerLauncherTemplate implements LanguageServerLa
     public final LanguageServer launch(String projectPath, LanguageClient client) throws LanguageServerException {
         Process languageServerProcess = startLanguageServerProcess(projectPath);
         waitCheckProcess(languageServerProcess);
+        if (this instanceof LanguageServerPrepareProjectProvider) {
+            LanguageServerPrepareProjectProvider lsPrepareProjectProvider = (LanguageServerPrepareProjectProvider)this;
+            lsPrepareProjectProvider.prepareProject(lsPrepareProjectProvider.getTimeOut(), projectPath);
+        }
         return connectToLanguageServer(languageServerProcess, client);
     }
 
