@@ -139,6 +139,19 @@ elif echo ${LINUX_TYPE} | grep -qi "opensuse"; then
         ${SUDO} zypper in nodejs
     }
 
+# Alpine 3.3
+############
+elif echo ${LINUX_TYPE} | grep -qi "alpine"; then
+    test "${PACKAGES}" = "" || {
+        ${SUDO} apk update
+        ${SUDO} apk add ${PACKAGES};
+    }
+
+    command -v nodejs >/dev/null 2>&1 || {
+        ${SUDO} apk update
+        ${SUDO} apk add nodejs;
+    }
+
 else
     >&2 echo "Unrecognized Linux Type"
     >&2 cat $FILE
@@ -146,12 +159,12 @@ else
 fi
 
 
-#####################
-### Install C# LS ###
-#####################
+#######################
+### Install Json LS ###
+#######################
 
 curl -s ${AGENT_BINARIES_URI} | tar xzf - -C ${LS_DIR}
 
 touch ${LS_LAUNCHER}
 chmod +x ${LS_LAUNCHER}
-echo "nodejs ${LS_DIR}/vscode-json-server/server.js" > ${LS_LAUNCHER}
+echo "nodejs ${LS_DIR}/vscode-json-server/out/jsonServerMain.js --stdio" > ${LS_LAUNCHER}

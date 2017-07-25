@@ -10,41 +10,37 @@
  */
 'use strict';
 
-import {DashboardController} from './dashboard.controller';
 import {DashboardLastWorkspacesController} from './last-workspaces/last-workspaces.controller';
 import {DashboardLastWorkspaces} from './last-workspaces/last-workspaces.directive';
 import {DashboardPanel} from './dashboard-panel/dashboard-panel.directive';
+import {CheService} from '../../components/api/che-service.factory';
+import {CheWorkspace} from '../../components/api/che-workspace.factory';
 
 export class DashboardConfig {
 
-  constructor(register) {
+  constructor(register: che.IRegisterService) {
 
     // last workspaces
     register.controller('DashboardLastWorkspacesController', DashboardLastWorkspacesController);
     register.directive('dashboardLastWorkspaces', DashboardLastWorkspaces);
 
-    // controller
-    register.controller('DashboardController', DashboardController);
-
     // panel of last used entries
     register.directive('dashboardPanel', DashboardPanel);
 
     // config routes
-    register.app.config(($routeProvider) => {
+    register.app.config(($routeProvider: ng.route.IRouteProvider) => {
       $routeProvider.accessWhen('/', {
         title: 'Dashboard',
         templateUrl: 'app/dashboard/dashboard.html',
-        controller: 'DashboardController',
-        controllerAs: 'dashboardController',
         resolve: {
-          check: ['$q', '$location', 'cheWorkspace', 'cheService', ($q, $location, cheWorkspace, cheService) => {
+          check: ['$q', '$location', 'cheWorkspace', 'cheService', ($q: ng.IQService, $location: ng.ILocationService, cheWorkspace: CheWorkspace, cheService: CheService) => {
             cheWorkspace.fetchWorkspaces().then(() => {
               if (cheWorkspace.getWorkspaces().length === 0) {
-                $location.path('/create-project');
+                $location.path('/create-workspace');
               }
             }, (error: any) => {
               if (error.status === 304 && cheWorkspace.getWorkspaces().length === 0) {
-                $location.path('/create-project');
+                $location.path('/create-workspace');
               }
             });
 

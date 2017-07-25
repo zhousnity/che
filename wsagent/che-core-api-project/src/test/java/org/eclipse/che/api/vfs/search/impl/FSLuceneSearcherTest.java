@@ -47,7 +47,8 @@ public class FSLuceneSearcherTest {
             "Apollo set several major human spaceflight milestones",
             "Maybe you should think twice",
             "To be or not to be beeeee lambergeeene",
-            "In early 1961, direct ascent was generally the mission mode in favor at NASA"
+            "In early 1961, direct ascent was generally the mission mode in favor at NASA",
+            "Time to think"
     };
 
     private File                                         indexDirectory;
@@ -203,6 +204,22 @@ public class FSLuceneSearcherTest {
         List<String> paths = result.getFilePaths();
         assertEquals(newArrayList("/folder/xxx.txt"), paths);
         assertEquals(result.getResults().get(0).getData().size(), 4);
+
+    }
+
+
+    @Test
+    public void searchesByFullTextAndFileName2() throws Exception {
+        VirtualFileSystem virtualFileSystem = virtualFileSystem();
+        VirtualFile folder = virtualFileSystem.getRoot().createFolder("folder");
+        folder.createFile("xxx.txt", TEST_CONTENT[2]);
+        folder.createFile("zzz.txt", TEST_CONTENT[4]);
+        searcher.init(virtualFileSystem);
+
+        SearchResult result = searcher.search(new QueryExpression().setText("*to*").setIncludePositions(true));
+        List<String> paths = result.getFilePaths();
+        assertEquals(paths.size(), 2);
+        assertEquals(result.getResults().get(0).getData().size(), 2);
 
     }
 

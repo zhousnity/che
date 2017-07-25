@@ -355,15 +355,6 @@ public interface GitLocalizationConstant extends Messages {
     @Key("view.commit.title")
     String commitTitle();
 
-    @Key("view.commit.all_field_title")
-    String commitAddAllFieldTitle();
-
-    @Key("view.commit.selection_field_title")
-    String commitSelectionFieldTitle();
-
-    @Key("view.commit.all_project_field_title")
-    String commitAllFieldTitle();
-
     @Key("view.commit.amend_field_title")
     String commitAmendFieldTitle();
 
@@ -376,6 +367,12 @@ public interface GitLocalizationConstant extends Messages {
     @Key("view.commit.grid.comment")
     String commitGridComment();
 
+    @Key("view.commit.push.checkbox.title")
+    String commitPushCheckboxTitle();
+
+    @Key("view.commit.nothing_to_commit.text")
+    String commitNothingToCommitMessageText();
+
     @Key("view.push.title")
     String pushViewTitle();
 
@@ -387,6 +384,9 @@ public interface GitLocalizationConstant extends Messages {
 
     @Key("view.push.remote_branch.field")
     String pushViewRemoteBranchFieldTitle();
+
+    @Key("view.push.force.checkbox.title")
+    String pushForceCheckboxTitle();
 
     // Reset
     @Key("view.reset.files.title")

@@ -17,7 +17,6 @@ import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.Widget;
-
 import org.eclipse.che.api.languageserver.shared.model.ExtendedCompletionItem;
 import org.eclipse.che.api.promises.client.Operation;
 import org.eclipse.che.api.promises.client.OperationException;
@@ -35,7 +34,7 @@ import org.eclipse.che.plugin.languageserver.ide.service.TextDocumentServiceClie
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.ServerCapabilities;
-import org.eclipse.lsp4j.TextDocumentIdentifier;
+import org.eclipse.lsp4j.TextEdit;
 
 import java.util.List;
 
@@ -47,8 +46,8 @@ import static org.eclipse.che.ide.api.theme.Style.theme;
  */
 public class CompletionItemBasedCompletionProposal implements CompletionProposal {
 
+    private final String                    currentWord;
     private final TextDocumentServiceClient documentServiceClient;
-    private final TextDocumentIdentifier    documentId;
     private final LanguageServerResources   resources;
     private final Icon                      icon;
     private final ServerCapabilities        serverCapabilities;
@@ -58,16 +57,16 @@ public class CompletionItemBasedCompletionProposal implements CompletionProposal
     private       boolean                   resolved;
 
     CompletionItemBasedCompletionProposal(ExtendedCompletionItem completionItem,
+                                          String currentWord,
                                           TextDocumentServiceClient documentServiceClient,
-                                          TextDocumentIdentifier documentId,
                                           LanguageServerResources resources,
                                           Icon icon,
                                           ServerCapabilities serverCapabilities,
                                           List<Match> highlights,
                                           int offset) {
         this.completionItem = completionItem;
+        this.currentWord = currentWord;
         this.documentServiceClient = documentServiceClient;
-        this.documentId = documentId;
         this.resources = resources;
         this.icon = icon;
         this.serverCapabilities = serverCapabilities;
@@ -78,7 +77,7 @@ public class CompletionItemBasedCompletionProposal implements CompletionProposal
 
     @Override
     public void getAdditionalProposalInfo(final AsyncCallback<Widget> callback) {
-        if (completionItem.getDocumentation() == null && canResolve()) {
+        if (completionItem.getItem().getDocumentation() == null && canResolve()) {
             resolve().then(new Operation<ExtendedCompletionItem>() {
                 @Override
                 public void apply(ExtendedCompletionItem item) throws OperationException {
@@ -98,7 +97,7 @@ public class CompletionItemBasedCompletionProposal implements CompletionProposal
     }
 
     private Widget createAdditionalInfoWidget() {
-        String documentation = completionItem.getDocumentation();
+        String documentation = completionItem.getItem().getDocumentation();
         if (documentation == null || documentation.trim().isEmpty()) {
             documentation = "No documentation found.";
         }
@@ -118,7 +117,7 @@ public class CompletionItemBasedCompletionProposal implements CompletionProposal
     public String getDisplayString() {
         SafeHtmlBuilder builder = new SafeHtmlBuilder();
 
-        String label = completionItem.getLabel();
+        String label = completionItem.getItem().getLabel();
         int pos = 0;
         for (Match highlight : highlights) {
             if (highlight.getStart() == highlight.getEnd()) {
@@ -137,8 +136,8 @@ public class CompletionItemBasedCompletionProposal implements CompletionProposal
             appendPlain(builder, label.substring(pos));
         }
 
-        if (completionItem.getDetail() != null) {
-            appendDetail(builder, completionItem.getDetail());
+        if (completionItem.getItem().getDetail() != null) {
+            appendDetail(builder, completionItem.getItem().getDetail());
         }
 
         return builder.toSafeHtml().asString();
@@ -167,7 +166,13 @@ public class CompletionItemBasedCompletionProposal implements CompletionProposal
 
     @Override
     public void getCompletion(final CompletionCallback callback) {
-        callback.onCompletion(new CompletionImpl(completionItem, offset));
+        if (canResolve()) {
+            resolve().then(completionItem -> {
+                callback.onCompletion(new CompletionImpl(completionItem.getItem(), currentWord, offset));
+            });
+        } else {
+            callback.onCompletion(new CompletionImpl(completionItem.getItem(), currentWord, offset));
+        }
     }
 
     private boolean canResolve() {
@@ -178,17 +183,18 @@ public class CompletionItemBasedCompletionProposal implements CompletionProposal
     }
 
     private Promise<ExtendedCompletionItem> resolve() {
-        completionItem.setTextDocumentIdentifier(documentId);
         return documentServiceClient.resolveCompletionItem(completionItem);
     }
 
     private static class CompletionImpl implements Completion {
 
         private CompletionItem completionItem;
+        private String         currentWord;
         private int            offset;
 
-        public CompletionImpl(CompletionItem completionItem, int offset) {
+        public CompletionImpl(CompletionItem completionItem, String currentWord, int offset) {
             this.completionItem = completionItem;
+            this.currentWord = currentWord;
             this.offset = offset;
         }
 
@@ -202,17 +208,25 @@ public class CompletionItemBasedCompletionProposal implements CompletionProposal
                         new TextPosition(range.getEnd().getLine(), range.getEnd().getCharacter()));
                 document.replace(startOffset, endOffset - startOffset, completionItem.getTextEdit().getNewText());
             } else {
-                String insertText = completionItem.getInsertText() == null ? completionItem.getLabel() : completionItem.getInsertText();
-                document.replace(document.getCursorOffset() - offset, offset, insertText);
+                int currentWordLength = currentWord.length();
+                int cursorOffset = document.getCursorOffset();
+                if (completionItem.getInsertText() == null) {
+                    document.replace(cursorOffset - currentWordLength, currentWordLength, completionItem.getLabel());
+                } else {
+                    document.replace(cursorOffset - offset, offset, completionItem.getInsertText());
+                }
             }
         }
 
         @Override
         public LinearRange getSelection(Document document) {
-            Range range = completionItem.getTextEdit().getRange();
-            int startOffset = document
-                                      .getIndexFromPosition(new TextPosition(range.getStart().getLine(), range.getStart().getCharacter()))
-                              + completionItem.getTextEdit().getNewText().length();
+            final TextEdit textEdit = completionItem.getTextEdit();
+            if (textEdit == null) {
+                return LinearRange.createWithStart(document.getCursorOffset()).andLength(0);
+            }
+            Range range = textEdit.getRange();
+            TextPosition textPosition = new TextPosition(range.getStart().getLine(), range.getStart().getCharacter());
+            int startOffset = document.getIndexFromPosition(textPosition) + textEdit.getNewText().length();
             return LinearRange.createWithStart(startOffset).andLength(0);
         }
 

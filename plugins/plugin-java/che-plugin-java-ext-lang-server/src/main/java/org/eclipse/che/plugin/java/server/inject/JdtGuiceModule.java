@@ -18,6 +18,7 @@ import com.google.inject.name.Named;
 import org.eclipse.che.JavadocUrlProvider;
 import org.eclipse.che.inject.DynaModule;
 import org.eclipse.che.jdt.rest.UrlContextProvider;
+import org.eclipse.che.plugin.java.server.JavaReconcileRequestHandler;
 import org.eclipse.che.plugin.java.server.ProjectListeners;
 import org.eclipse.che.plugin.java.server.refactoring.RefactoringManager;
 import org.eclipse.che.plugin.java.server.rest.CodeAssistService;
@@ -28,7 +29,7 @@ import org.eclipse.che.plugin.java.server.rest.JavadocService;
 import org.eclipse.che.plugin.java.server.rest.JavadocUrlProviderImpl;
 import org.eclipse.che.plugin.java.server.rest.JdtExceptionMapper;
 import org.eclipse.che.plugin.java.server.rest.RefactoringService;
-import org.eclipse.che.plugin.java.server.rest.SearchService;
+import org.eclipse.che.plugin.java.server.rest.SearchJsonRpcService;
 import org.eclipse.core.internal.filebuffers.FileBuffersPlugin;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.jdt.internal.ui.JavaPlugin;
@@ -55,7 +56,9 @@ public class JdtGuiceModule extends AbstractModule {
         bind(ProjectListeners.class).asEagerSingleton();
         bind(RefactoringManager.class).asEagerSingleton();
         bind(RefactoringService.class);
-        bind(SearchService.class);
+        bind(SearchJsonRpcService.class).asEagerSingleton();
+
+        bind(JavaReconcileRequestHandler.class).asEagerSingleton();
 
         bind(JavadocUrlProvider.class).to(JavadocUrlProviderImpl.class);
         requestStaticInjection(UrlContextProvider.class);
@@ -75,6 +78,4 @@ public class JdtGuiceModule extends AbstractModule {
     protected String provideIndex(@Named("che.workspace.metadata") String wsMetadata) {
         return Paths.get(System.getProperty("user.home"), wsMetadata, "index").toString();
     }
-
-
 }

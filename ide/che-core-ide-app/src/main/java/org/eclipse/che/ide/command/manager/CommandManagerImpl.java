@@ -87,6 +87,7 @@ public class CommandManagerImpl implements CommandManager, WsAgentComponent {
         this.commandNameGenerator = commandNameGenerator;
 
         commands = new HashMap<>();
+        registerNative();
     }
 
     @Override
@@ -100,28 +101,43 @@ public class CommandManagerImpl implements CommandManager, WsAgentComponent {
             workspaceCommands.forEach(workspaceCommand -> commands.put(workspaceCommand.getName(),
                                                                        new CommandImpl(workspaceCommand, new ApplicableContext())));
 
-            // get all commands related to the projects
-            Arrays.stream(appContext.getProjects())
-                  .forEach(project -> projectCommandManager.getCommands(project).forEach(projectCommand -> {
-                      final CommandImpl existedCommand = commands.get(projectCommand.getName());
-
-                      if (existedCommand == null) {
-                          commands.put(projectCommand.getName(),
-                                       new CommandImpl(projectCommand, new ApplicableContext(project.getPath())));
-                      } else {
-                          if (projectCommand.equalsIgnoreContext(existedCommand)) {
-                              existedCommand.getApplicableContext().addProject(project.getPath());
-                          } else {
-                              // normally, should never happen
-                              Log.error(CommandManagerImpl.this.getClass(), "Different commands with the same names found");
-                          }
-                      }
-                  }));
+            addCommands();
 
             callback.onSuccess(this);
 
             notifyCommandsLoaded();
         });
+    }
+
+    public void fetchCommands() {
+        workspaceCommandManager.getCommands(appContext.getWorkspaceId()).then(workspaceCommands -> {
+            workspaceCommands.forEach(workspaceCommand -> commands.put(workspaceCommand.getName(),
+                    new CommandImpl(workspaceCommand, new ApplicableContext())));
+
+            addCommands();
+
+            notifyCommandsLoaded();
+        });
+    }
+
+    private void addCommands() {
+        // get all commands related to the projects
+        Arrays.stream(appContext.getProjects())
+                .forEach(project -> projectCommandManager.getCommands(project).forEach(projectCommand -> {
+                    final CommandImpl existedCommand = commands.get(projectCommand.getName());
+
+                    if (existedCommand == null) {
+                        commands.put(projectCommand.getName(),
+                                new CommandImpl(projectCommand, new ApplicableContext(project.getPath())));
+                    } else {
+                        if (projectCommand.equalsIgnoreContext(existedCommand)) {
+                            existedCommand.getApplicableContext().addProject(project.getPath());
+                        } else {
+                            // normally, should never happen
+                            Log.error(CommandManagerImpl.this.getClass(), "Different commands with the same names found");
+                        }
+                    }
+                }));
     }
 
     @Override
@@ -387,4 +403,17 @@ public class CommandManagerImpl implements CommandManager, WsAgentComponent {
     private void notifyCommandUpdated(CommandImpl prevCommand, CommandImpl command) {
         eventBus.fireEvent(new CommandUpdatedEvent(prevCommand, command));
     }
+
+    /* Expose Command Manager's internal API to the world, to allow selenium tests or clients that use IDE to refresh commands. */
+    private native void registerNative() /*-{
+        var that = this;
+
+        var CommandManager = {};
+
+        CommandManager.refresh = $entry(function () {
+            that.@org.eclipse.che.ide.command.manager.CommandManagerImpl::fetchCommands()();
+        });
+
+        $wnd.IDE.CommandManager = CommandManager;
+    }-*/;
 }

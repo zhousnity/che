@@ -25,19 +25,27 @@ import org.eclipse.che.api.core.ForbiddenException;
 import org.eclipse.che.api.core.NotFoundException;
 import org.eclipse.che.api.core.ServerException;
 import org.eclipse.che.api.core.UnauthorizedException;
+import org.eclipse.che.api.core.jsonrpc.commons.JsonRpcException;
+import org.eclipse.che.api.core.jsonrpc.commons.RequestHandlerConfigurator;
+import org.eclipse.che.api.core.jsonrpc.commons.RequestTransmitter;
 import org.eclipse.che.api.core.model.project.type.Value;
 import org.eclipse.che.api.core.notification.EventService;
 import org.eclipse.che.api.core.rest.Service;
 import org.eclipse.che.api.core.rest.annotations.Description;
 import org.eclipse.che.api.core.rest.annotations.GenerateLink;
+import org.eclipse.che.api.core.util.CompositeLineConsumer;
+import org.eclipse.che.api.project.server.importer.ProjectImportOutputJsonRpcLineConsumer;
+import org.eclipse.che.api.project.server.importer.ProjectImportOutputJsonRpcRegistrar;
 import org.eclipse.che.api.project.server.importer.ProjectImportOutputWSLineConsumer;
 import org.eclipse.che.api.project.server.notification.ProjectItemModifiedEvent;
 import org.eclipse.che.api.project.server.type.ProjectTypeResolution;
 import org.eclipse.che.api.project.shared.dto.CopyOptions;
-import org.eclipse.che.api.project.shared.dto.FoundItem;
-import org.eclipse.che.api.project.shared.dto.FoundItemData;
+import org.eclipse.che.api.project.shared.dto.SearchResultDto;
+import org.eclipse.che.api.project.shared.dto.SearchOccurrenceDto;
 import org.eclipse.che.api.project.shared.dto.ItemReference;
 import org.eclipse.che.api.project.shared.dto.MoveOptions;
+import org.eclipse.che.api.project.shared.dto.ProjectSearchRequestDto;
+import org.eclipse.che.api.project.shared.dto.ProjectSearchResponseDto;
 import org.eclipse.che.api.project.shared.dto.SourceEstimation;
 import org.eclipse.che.api.project.shared.dto.TreeElement;
 import org.eclipse.che.api.vfs.VirtualFile;
@@ -108,18 +116,24 @@ public class ProjectService extends Service {
     private static final Logger LOG  = LoggerFactory.getLogger(ProjectService.class);
     private static final Tika   TIKA = new Tika();
 
-    private final ProjectManager              projectManager;
-    private final EventService                eventService;
-    private final ProjectServiceLinksInjector projectServiceLinksInjector;
-    private final String                      workspace;
+    private final ProjectManager                      projectManager;
+    private final EventService                        eventService;
+    private final ProjectServiceLinksInjector         projectServiceLinksInjector;
+    private final RequestTransmitter                  transmitter;
+    private final ProjectImportOutputJsonRpcRegistrar projectImportHandlerRegistrar;
+    private final String                              workspace;
 
     @Inject
     public ProjectService(ProjectManager projectManager,
                           EventService eventService,
-                          ProjectServiceLinksInjector projectServiceLinksInjector) {
+                          ProjectServiceLinksInjector projectServiceLinksInjector,
+                          RequestTransmitter transmitter,
+                          ProjectImportOutputJsonRpcRegistrar projectImportHandlerRegistrar) {
         this.projectManager = projectManager;
         this.eventService = eventService;
         this.projectServiceLinksInjector = projectServiceLinksInjector;
+        this.transmitter = transmitter;
+        this.projectImportHandlerRegistrar = projectImportHandlerRegistrar;
         this.workspace = WorkspaceIdProvider.getWorkspaceId();
     }
 
@@ -354,8 +368,16 @@ public class ProjectService extends Service {
                                                                      ServerException,
                                                                      NotFoundException,
                                                                      BadRequestException {
-        projectManager.importProject(path, sourceStorage, force,
-                                     () -> new ProjectImportOutputWSLineConsumer(path, workspace, 300));
+
+        final int delayBetweenMessages = 300;
+
+        final ProjectImportOutputWSLineConsumer wsLineConsumer =
+                new ProjectImportOutputWSLineConsumer(path, delayBetweenMessages);
+
+        final ProjectImportOutputJsonRpcLineConsumer rpcLineConsumer =
+                new ProjectImportOutputJsonRpcLineConsumer(path, transmitter, projectImportHandlerRegistrar, delayBetweenMessages);
+
+        projectManager.importProject(path, sourceStorage, force, () -> new CompositeLineConsumer(wsLineConsumer, rpcLineConsumer));
     }
 
     @POST
@@ -859,15 +881,15 @@ public class ProjectService extends Service {
                    @ApiResponse(code = 404, message = "Not found"),
                    @ApiResponse(code = 409, message = "Conflict error"),
                    @ApiResponse(code = 500, message = "Internal Server Error")})
-    public List<FoundItem> search(@ApiParam(value = "Path to resource, i.e. where to search?", required = true)
+    public List<SearchResultDto> search(@ApiParam(value = "Path to resource, i.e. where to search?", required = true)
                                       @PathParam("path") String path,
-                                  @ApiParam(value = "Resource name")
+                                        @ApiParam(value = "Resource name")
                                       @QueryParam("name") String name,
-                                  @ApiParam(value = "Search keywords")
+                                        @ApiParam(value = "Search keywords")
                                       @QueryParam("text") String text,
-                                  @ApiParam(value = "Maximum items to display. If this parameter is dropped, there are no limits")
+                                        @ApiParam(value = "Maximum items to display. If this parameter is dropped, there are no limits")
                                       @QueryParam("maxItems") @DefaultValue("-1") int maxItems,
-                                  @ApiParam(value = "Skip count")
+                                        @ApiParam(value = "Skip count")
                                       @QueryParam("skipCount") int skipCount) throws NotFoundException,
                                                                                      ForbiddenException,
                                                                                      ConflictException,
@@ -894,7 +916,7 @@ public class ProjectService extends Service {
 
         final SearchResult result = searcher.search(expr);
         final List<SearchResultEntry> searchResultEntries = result.getResults();
-        final List<FoundItem> s = new ArrayList<>(searchResultEntries.size());
+        final List<SearchResultDto> s = new ArrayList<>(searchResultEntries.size());
         final FolderEntry root = projectManager.getProjectsRoot();
 
         for (SearchResultEntry searchResultEntry : searchResultEntries) {
@@ -903,22 +925,46 @@ public class ProjectService extends Service {
             if (child != null && child.isFile()) {
                 final ItemReference itemReference = injectFileLinks(asDto((FileEntry)child));
                 final List<LuceneSearcher.OffsetData> datas = searchResultEntry.getData();
-                List<FoundItemData> foundItemDatas = new ArrayList<>(datas.size());
+                List<SearchOccurrenceDto> searchOccurrenceDtos = new ArrayList<>(datas.size());
                 for(LuceneSearcher.OffsetData data : datas) {
-                    final FoundItemData foundItemData = DtoFactory.getInstance().createDto(FoundItemData.class).withPhrase(data.phrase)
-                                                                  .withScore(data.score)
-                                                                  .withStartOffset(data.startOffset)
-                                                                  .withEndOffset(data.endOffset);
-                    foundItemDatas.add(foundItemData);
+                    final SearchOccurrenceDto
+                            searchOccurrenceDto = DtoFactory.getInstance().createDto(SearchOccurrenceDto.class).withPhrase(data.phrase)
+                                                            .withScore(data.score)
+                                                            .withStartOffset(data.startOffset)
+                                                            .withEndOffset(data.endOffset);
+                    searchOccurrenceDtos.add(searchOccurrenceDto);
                 }
-                final FoundItem foundItem =
-                        DtoFactory.getInstance().createDto(FoundItem.class);
+                final SearchResultDto searchResultDto =
+                        DtoFactory.getInstance().createDto(SearchResultDto.class);
 
-                s.add(foundItem.withItemReference(itemReference).withFoundItemData(foundItemDatas));
+                s.add(searchResultDto.withItemReference(itemReference).withSearchOccurrences(searchOccurrenceDtos));
             }
         }
 
         return s;
+    }
+
+    @Inject
+    private void configureProjectSearchRequestHandler(RequestHandlerConfigurator requestHandlerConfigurator){
+        requestHandlerConfigurator.newConfiguration()
+                                  .methodName("project/search")
+                                  .paramsAsDto(ProjectSearchRequestDto.class)
+                                  .resultAsDto(ProjectSearchResponseDto.class)
+                                  .withFunction(this::search);
+    }
+
+    public ProjectSearchResponseDto search(ProjectSearchRequestDto request) {
+        String path = request.getPath();
+        String name = request.getName();
+        String text = request.getText();
+        int maxItems = request.getMaxItems();
+        int skipCount = request.getSkipCount();
+
+        try {
+            return newDto(ProjectSearchResponseDto.class).withItemReferences(search(path, name, text, maxItems, skipCount));
+        } catch (ServerException | ConflictException | NotFoundException | ForbiddenException e) {
+            throw new JsonRpcException(-27000, e.getMessage());
+        }
     }
 
     private void logProjectCreatedEvent(@NotNull String projectName, @NotNull String projectType) {

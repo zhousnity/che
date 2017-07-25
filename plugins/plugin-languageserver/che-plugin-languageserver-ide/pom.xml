@@ -16,7 +16,7 @@
     <parent>
         <artifactId>che-plugin-languageserver-parent</artifactId>
         <groupId>org.eclipse.che.plugin</groupId>
-        <version>5.12.0-SNAPSHOT</version>
+        <version>5.16.0-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
     <artifactId>che-plugin-languageserver-ide</artifactId>
@@ -93,6 +93,10 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.eclipse.lsp4j</groupId>
+            <artifactId>org.eclipse.lsp4j.jsonrpc</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.xtext</groupId>
             <artifactId>org.eclipse.xtext.xbase.lib.gwt</artifactId>
         </dependency>
@@ -153,7 +157,7 @@
                 <version>${project.version}</version>
                 <executions>
                     <execution>
-                        <phase>process-sources</phase>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>generate</goal>
                         </goals>

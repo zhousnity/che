@@ -20,8 +20,8 @@ import org.eclipse.che.ide.api.editor.EditorWithAutoSave;
 import org.eclipse.che.ide.api.editor.document.Document;
 import org.eclipse.che.ide.api.editor.document.DocumentHandle;
 import org.eclipse.che.ide.api.editor.document.DocumentStorage;
-import org.eclipse.che.ide.api.editor.events.DocumentChangeEvent;
-import org.eclipse.che.ide.api.editor.events.DocumentChangeHandler;
+import org.eclipse.che.ide.api.editor.events.DocumentChangedEvent;
+import org.eclipse.che.ide.api.editor.events.DocumentChangedHandler;
 import org.eclipse.che.ide.api.editor.text.TextPosition;
 import org.eclipse.che.ide.api.editor.texteditor.TextEditor;
 import org.eclipse.che.ide.api.event.FileContentUpdateEvent;
@@ -37,10 +37,11 @@ import java.util.Objects;
 import java.util.Set;
 
 import static org.eclipse.che.ide.api.notification.StatusNotification.DisplayMode.EMERGE_MODE;
+import static org.eclipse.che.ide.api.notification.StatusNotification.DisplayMode.NOT_EMERGE_MODE;
 import static org.eclipse.che.ide.api.notification.StatusNotification.Status.FAIL;
 import static org.eclipse.che.ide.api.notification.StatusNotification.Status.SUCCESS;
 
-public class EditorGroupSynchronizationImpl implements EditorGroupSynchronization, DocumentChangeHandler, FileContentUpdateHandler {
+public class EditorGroupSynchronizationImpl implements EditorGroupSynchronization, DocumentChangedHandler, FileContentUpdateHandler {
     private final DocumentStorage     documentStorage;
     private final NotificationManager notificationManager;
     private final HandlerRegistration fileContentUpdateHandlerRegistration;
@@ -60,10 +61,30 @@ public class EditorGroupSynchronizationImpl implements EditorGroupSynchronizatio
     @Override
     public void addEditor(EditorPartPresenter editor) {
         DocumentHandle documentHandle = getDocumentHandleFor(editor);
-        if (documentHandle != null) {
-            HandlerRegistration handlerRegistration = documentHandle.getDocEventBus().addHandler(DocumentChangeEvent.TYPE, this);
-            synchronizedEditors.put(editor, handlerRegistration);
+        if (documentHandle == null) {
+            return;
         }
+
+        if (synchronizedEditors.isEmpty()) {
+            HandlerRegistration handlerRegistration = documentHandle.getDocEventBus().addHandler(DocumentChangedEvent.TYPE, this);
+            synchronizedEditors.put(editor, handlerRegistration);
+            return;
+        }
+
+        EditorPartPresenter groupMember = synchronizedEditors.keySet().iterator().next();
+        if ((groupMember instanceof EditorWithAutoSave) && !((EditorWithAutoSave)groupMember).isAutoSaveEnabled()) {
+            //group can contains unsaved content - we need update content for the editor
+            Document editorDocument = documentHandle.getDocument();
+            Document groupMemberDocument = getDocumentHandleFor(groupMember).getDocument();
+
+            String oldContent = editorDocument.getContents();
+            String groupMemberContent = groupMemberDocument.getContents();
+
+            editorDocument.replace(0, oldContent.length(), groupMemberContent);
+        }
+
+        HandlerRegistration handlerRegistration = documentHandle.getDocEventBus().addHandler(DocumentChangedEvent.TYPE, this);
+        synchronizedEditors.put(editor, handlerRegistration);
     }
 
     @Override
@@ -74,10 +95,6 @@ public class EditorGroupSynchronizationImpl implements EditorGroupSynchronizatio
 
     @Override
     public void removeEditor(EditorPartPresenter editor) {
-        if (editor.isDirty()) {
-            editor.doSave();
-        }
-
         HandlerRegistration handlerRegistration = synchronizedEditors.remove(editor);
         if (handlerRegistration != null) {
             handlerRegistration.removeHandler();
@@ -90,9 +107,7 @@ public class EditorGroupSynchronizationImpl implements EditorGroupSynchronizatio
 
     @Override
     public void unInstall() {
-        for (HandlerRegistration handlerRegistration : synchronizedEditors.values()) {
-            handlerRegistration.removeHandler();
-        }
+        synchronizedEditors.values().forEach(HandlerRegistration::removeHandler);
 
         if (fileContentUpdateHandlerRegistration != null) {
             fileContentUpdateHandlerRegistration.removeHandler();
@@ -106,7 +121,7 @@ public class EditorGroupSynchronizationImpl implements EditorGroupSynchronizatio
     }
 
     @Override
-    public void onDocumentChange(DocumentChangeEvent event) {
+    public void onDocumentChanged(DocumentChangedEvent event) {
         DocumentHandle activeEditorDocumentHandle = getDocumentHandleFor(groupLeaderEditor);
         if (activeEditorDocumentHandle == null || !event.getDocument().isSameAs(activeEditorDocumentHandle)) {
             return;
@@ -154,7 +169,7 @@ public class EditorGroupSynchronizationImpl implements EditorGroupSynchronizatio
         });
     }
 
-    private void updateContent(String newContent, String oldStamp, VirtualFile virtualFile) {
+    private void updateContent(String newContent, String eventModificationStamp, VirtualFile virtualFile) {
         final DocumentHandle documentHandle = getDocumentHandleFor(groupLeaderEditor);
         if (documentHandle == null) {
             return;
@@ -164,23 +179,23 @@ public class EditorGroupSynchronizationImpl implements EditorGroupSynchronizatio
         final String oldContent = document.getContents();
         final TextPosition cursorPosition = document.getCursorPosition();
 
-        if (!(virtualFile instanceof File)){
+        if (!(virtualFile instanceof File)) {
             replaceContent(document, newContent, oldContent, cursorPosition);
             return;
         }
 
         final File file = (File)virtualFile;
-        final String newStamp = file.getModificationStamp();
+        final String currentStamp = file.getModificationStamp();
 
-        if (oldStamp == null && !Objects.equals(newContent, oldContent)) {
+        if (eventModificationStamp == null && !Objects.equals(newContent, oldContent)) {
             replaceContent(document, newContent, oldContent, cursorPosition);
             return;
         }
 
-        if (!Objects.equals(oldStamp, newStamp)) {
+        if (!Objects.equals(eventModificationStamp, currentStamp)) {
             replaceContent(document, newContent, oldContent, cursorPosition);
 
-            notificationManager.notify("External operation", "File '" + file.getName() + "' is updated", SUCCESS, EMERGE_MODE);
+            notificationManager.notify("External operation", "File '" + file.getName() + "' is updated", SUCCESS, NOT_EMERGE_MODE);
         }
     }
 
@@ -198,9 +213,7 @@ public class EditorGroupSynchronizationImpl implements EditorGroupSynchronizatio
     }
 
     private void resolveAutoSave() {
-        for (EditorPartPresenter editor : synchronizedEditors.keySet()) {
-            resolveAutoSaveFor(editor);
-        }
+        synchronizedEditors.keySet().forEach(this::resolveAutoSaveFor);
     }
 
     private void resolveAutoSaveFor(EditorPartPresenter editor) {
@@ -214,8 +227,6 @@ public class EditorGroupSynchronizationImpl implements EditorGroupSynchronizatio
             return;
         }
 
-        if (editorWithAutoSave.isAutoSaveEnabled()) {
-            editorWithAutoSave.disableAutoSave();
-        }
+        editorWithAutoSave.disableAutoSave();
     }
 }

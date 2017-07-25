@@ -18,13 +18,12 @@ import org.eclipse.che.api.promises.client.Operation;
 import org.eclipse.che.api.promises.client.PromiseError;
 import org.eclipse.che.ide.api.dialogs.ConfirmCallback;
 import org.eclipse.che.ide.api.dialogs.MessageDialog;
-import org.eclipse.che.ide.api.machine.DevMachine;
 import org.eclipse.che.ide.api.resources.Project;
 import org.eclipse.che.ide.api.resources.Resource;
 import org.eclipse.che.ide.commons.exception.ServerException;
 import org.eclipse.che.ide.ext.git.client.BaseTest;
 import org.eclipse.che.ide.ext.git.client.compare.ComparePresenter;
-import org.eclipse.che.ide.ext.git.client.compare.changedList.ChangedListPresenter;
+import org.eclipse.che.ide.ext.git.client.compare.changeslist.ChangesListPresenter;
 import org.eclipse.che.ide.resource.Path;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -56,7 +55,7 @@ public class HistoryPresenterTest extends BaseTest {
     @Mock
     private ComparePresenter     comparePresenter;
     @Mock
-    private ChangedListPresenter changedListPresenter;
+    private ChangesListPresenter changesListPresenter;
     @InjectMocks
     private HistoryPresenter     presenter;
 
@@ -69,15 +68,13 @@ public class HistoryPresenterTest extends BaseTest {
         when(appContext.getResource()).thenReturn(resource);
         when(appContext.getRootProject()).thenReturn(project);
 
-        when(service.log(any(DevMachine.class),
-                         any(Path.class),
+        when(service.log(any(Path.class),
                          any(Path[].class),
                          anyInt(),
                          anyInt(),
                          anyBoolean()))
                 .thenReturn(logPromise);
-        when(service.diff(any(DevMachine.class),
-                          any(Path.class),
+        when(service.diff(any(Path.class),
                           anyList(),
                           any(DiffType.class),
                           anyBoolean(),
@@ -85,8 +82,7 @@ public class HistoryPresenterTest extends BaseTest {
                           anyString(),
                           anyString()))
                 .thenReturn(stringPromise);
-        when(service.showFileContent(any(DevMachine.class),
-                                     any(Path.class),
+        when(service.showFileContent(any(Path.class),
                                      any(Path.class),
                                      anyString()))
                 .thenReturn(showPromise);
@@ -184,7 +180,7 @@ public class HistoryPresenterTest extends BaseTest {
         verify(stringPromise).then(stringCaptor.capture());
         stringCaptor.getValue().apply("M file1\nM file2");
 
-        verify(changedListPresenter).show(anyMap(), eq("commitB"), eq("commitA"), any(Project.class));
+        verify(changesListPresenter).show(anyMap(), eq("commitB"), eq("commitA"), any(Project.class));
     }
 
     @Test

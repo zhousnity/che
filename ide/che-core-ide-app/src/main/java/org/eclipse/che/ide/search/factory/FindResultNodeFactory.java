@@ -10,8 +10,10 @@
  *******************************************************************************/
 package org.eclipse.che.ide.search.factory;
 
-import org.eclipse.che.ide.api.resources.Resource;
+import org.eclipse.che.ide.api.resources.SearchResult;
 import org.eclipse.che.ide.search.presentation.FindResultGroupNode;
+
+import java.util.List;
 
 /**
  * Factory for creating tree element for the result of searching.
@@ -28,5 +30,5 @@ public interface FindResultNodeFactory {
      *         requested text to search
      * @return new instance of {@link FindResultGroupNode}
      */
-    FindResultGroupNode newResultNode(Resource[] result, String request);
+    FindResultGroupNode newResultNode(List<SearchResult> result, String request);
 }

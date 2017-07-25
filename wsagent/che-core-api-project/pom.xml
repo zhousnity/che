@@ -16,7 +16,7 @@
     <parent>
         <artifactId>che-agent-parent</artifactId>
         <groupId>org.eclipse.che.core</groupId>
-        <version>5.12.0-SNAPSHOT</version>
+        <version>5.16.0-SNAPSHOT</version>
     </parent>
     <artifactId>che-core-api-project</artifactId>
     <packaging>jar</packaging>
@@ -106,7 +106,7 @@
         <dependency>
             <groupId>org.eclipse.che.core</groupId>
             <artifactId>che-core-api-project-shared</artifactId>
-            <version>5.12.0-SNAPSHOT</version>
+            <version>5.16.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.che.core</groupId>
@@ -131,10 +131,6 @@
         <dependency>
             <groupId>org.eclipse.che.core</groupId>
             <artifactId>wsagent-local</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.everrest</groupId>
-            <artifactId>everrest-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.everrest</groupId>
@@ -183,6 +179,11 @@
         <dependency>
             <groupId>org.eclipse.che.core</groupId>
             <artifactId>che-core-commons-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.everrest</groupId>
+            <artifactId>everrest-core</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

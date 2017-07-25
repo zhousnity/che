@@ -51,7 +51,7 @@ Variables:
   export CHE_REGISTRY_HOST=${CHE_REGISTRY_HOST:-${DEFAULT_CHE_REGISTRY_HOST}}
 
   DEFAULT_CHE_PORT=8080
-  CHE_PORT=${CHE_PORT:-${DEFAULT_CHE_PORT}}
+  export CHE_PORT=${CHE_PORT:-${DEFAULT_CHE_PORT}}
 
   DEFAULT_CHE_IP=
   CHE_IP=${CHE_IP:-${DEFAULT_CHE_IP}}
@@ -83,8 +83,10 @@ set_environment_variables () {
   ### Set value of derived environment variables.
 
   # CHE_DOCKER_IP is used internally by Che to set its IP address
-  if [[ -n "${CHE_IP}" ]]; then
-    export CHE_DOCKER_IP="${CHE_IP}"
+  if [[ -z "${CHE_DOCKER_IP}" ]]; then
+    if [[ -n "${CHE_IP}" ]]; then
+        export CHE_DOCKER_IP="${CHE_IP}"
+    fi
   fi
 
   # Convert Tomcat environment variables to POSIX format.
@@ -244,23 +246,46 @@ init() {
   fi
   ### Are we going to use the embedded che.properties or one provided by user?`
   ### CHE_LOCAL_CONF_DIR is internal Che variable that sets where to load
-  export CHE_LOCAL_CONF_DIR="/conf"
-  if [ -f "/conf/che.properties" ]; then
-    echo "Found custom che.properties..."
-    if [ "$CHE_USER" != "root" ]; then
-      sudo chown -R ${CHE_USER} ${CHE_LOCAL_CONF_DIR}
+  # check if we have permissions to create /conf folder.
+  if [ -w / ]; then
+    export CHE_LOCAL_CONF_DIR="/conf"
+    if [ -f "/conf/che.properties" ]; then
+      echo "Found custom che.properties..."
+      if [ "$CHE_USER" != "root" ]; then
+        sudo chown -R ${CHE_USER} ${CHE_LOCAL_CONF_DIR}
+      fi
+    else
+      if [ ! -d ${CHE_LOCAL_CONF_DIR} ]; then
+          mkdir -p ${CHE_LOCAL_CONF_DIR}
+      fi
+      if [ -w ${CHE_LOCAL_CONF_DIR} ];then
+        echo "ERROR: user ${CHE_USER} does OK have write permissions to ${CHE_LOCAL_CONF_DIR}"
+        echo "Using embedded che.properties... Copying template to ${CHE_LOCAL_CONF_DIR}/che.properties"
+        cp -rf "${CHE_HOME}/conf/che.properties" ${CHE_LOCAL_CONF_DIR}/che.properties
+      else
+        echo "ERROR: user ${CHE_USER} does not have write permissions to ${CHE_LOCAL_CONF_DIR}"
+        exit 1
+      fi
     fi
   else
-    echo "Using embedded che.properties... Copying template to ${CHE_LOCAL_CONF_DIR}/che.properties"
-    cp -rf "${CHE_HOME}/conf/che.properties" ${CHE_LOCAL_CONF_DIR}/che.properties
+    echo "WARN: parent dir is not writeable, CHE_LOCAL_CONF_DIR will be set to ${CHE_DATA}/conf"
+    export CHE_LOCAL_CONF_DIR="${CHE_DATA}/conf"
+    if [ ! -d ${CHE_LOCAL_CONF_DIR} ]; then
+        mkdir -p ${CHE_LOCAL_CONF_DIR}
+    fi
+    if [ -w ${CHE_LOCAL_CONF_DIR} ];then
+      echo "Using embedded che.properties... Copying template to ${CHE_LOCAL_CONF_DIR}/che.properties"
+      cp -rf "${CHE_HOME}/conf/che.properties" ${CHE_LOCAL_CONF_DIR}/che.properties
+    else
+      echo "ERROR: user ${CHE_USER} does not have write permissions to ${CHE_LOCAL_CONF_DIR}"
+      exit 1
+    fi
   fi
 
   # Update the provided che.properties with the location of the /data mounts
   sed -i "/che.workspace.storage=/c\che.workspace.storage=/data/workspaces" $CHE_LOCAL_CONF_DIR/che.properties
   sed -i "/che.database=/c\che.database=/data/storage" $CHE_LOCAL_CONF_DIR/che.properties
   sed -i "/che.template.storage=/c\che.template.storage=/data/templates" $CHE_LOCAL_CONF_DIR/che.properties
-  sed -i "/che.stacks.storage=/c\che.stacks.storage=/data/stacks/stacks.json" $CHE_LOCAL_CONF_DIR/che.properties
-  sed -i "/che.stacks.images=/c\che.stacks.images=/data/stacks/images" $CHE_LOCAL_CONF_DIR/che.properties
   sed -i "/che.workspace.agent.dev=/c\che.workspace.agent.dev=${CHE_DATA_HOST}/lib/ws-agent.tar.gz" $CHE_LOCAL_CONF_DIR/che.properties
   sed -i "/che.workspace.terminal_linux_amd64=/c\che.workspace.terminal_linux_amd64=${CHE_DATA_HOST}/lib/linux_amd64/terminal" $CHE_LOCAL_CONF_DIR/che.properties
   sed -i "/che.workspace.terminal_linux_arm7=/c\che.workspace.terminal_linux_arm7=${CHE_DATA_HOST}/lib/linux_arm7/terminal" $CHE_LOCAL_CONF_DIR/che.properties
@@ -281,10 +306,9 @@ init() {
   mkdir -p ${CHE_DATA}/lib  
   cp -rf ${CHE_HOME}/lib/* "${CHE_DATA}"/lib
 
-  if [[ ! -f "${CHE_DATA}"/stacks/stacks.json ]];then
-    rm -rf "${CHE_DATA}"/stacks/*
-    mkdir -p "${CHE_DATA}"/stacks
-    cp -rf "${CHE_HOME}"/stacks/* "${CHE_DATA}"/stacks
+  # Cleanup no longer in use stacks folder, accordance to a new loading policy.
+  if [[ -d "${CHE_DATA}"/stacks ]];then
+    rm -rf "${CHE_DATA}"/stacks
   fi
 
   if [[ ! -f "${CHE_DATA}"/templates/samples.json ]];then
@@ -305,10 +329,10 @@ get_che_data_from_host() {
 }
 
 get_che_server_container_id() {
-  # Returning `hostname` doesn't work when running Che on OpenShift/Kubernetes.
+  # Returning `hostname` doesn't work when running Che on OpenShift/Kubernetes/Docker Cloud.
   # In these cases `hostname` correspond to the pod ID that is different from
   # the container ID
-  hostname
+  echo $(basename "$(head /proc/1/cgroup || hostname)");
 }
 
 is_docker_for_mac_or_windows() {

@@ -12,11 +12,17 @@ package org.eclipse.che.plugin.json.languageserver;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import org.eclipse.che.api.languageserver.exception.LanguageServerException;
+import org.eclipse.che.api.languageserver.launcher.LanguageServerLauncher;
 import org.eclipse.che.api.languageserver.launcher.LanguageServerLauncherTemplate;
-import org.eclipse.che.api.languageserver.shared.model.LanguageDescription;
+import org.eclipse.che.api.languageserver.registry.DocumentFilter;
+import org.eclipse.che.api.languageserver.registry.LanguageServerDescription;
+import org.eclipse.che.api.languageserver.registry.ServerInitializerObserver;
+import org.eclipse.che.plugin.json.inject.JsonModule;
+import org.eclipse.lsp4j.ServerCapabilities;
+import org.eclipse.lsp4j.jsonrpc.Endpoint;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
+import org.eclipse.lsp4j.jsonrpc.services.ServiceEndpoints;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageServer;
 
@@ -24,32 +30,25 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
-import static java.util.Arrays.asList;
 
 /**
  * @author Evgen Vidolob
  * @author Anatolii Bazko
  */
 @Singleton
-public class JsonLanguageServerLauncher extends LanguageServerLauncherTemplate {
-
-    private static final String   LANGUAGE_ID = "json";
-    private static final String[] EXTENSIONS  = new String[]{"json", "bowerrc", "jshintrc", "jscsrc", "eslintrc",
-                                                             "babelrc"};
-    private static final String[] MIME_TYPES  = new String[]{"application/json"};
-    private static final LanguageDescription description;
+public class JsonLanguageServerLauncher extends LanguageServerLauncherTemplate implements ServerInitializerObserver {
+    private static final String                    REGEX       = ".*\\.(json|bowerrc|jshintrc|jscsrc|eslintrc|babelrc)";
+    private static final LanguageServerDescription DESCRIPTION = createServerDescription();
 
     private final Path launchScript;
 
     @Inject
     public JsonLanguageServerLauncher() {
         launchScript = Paths.get(System.getenv("HOME"), "che/ls-json/launch.sh");
-    }
-
-    @Override
-    public LanguageDescription getLanguageDescription() {
-        return description;
     }
 
     @Override
@@ -76,10 +75,32 @@ public class JsonLanguageServerLauncher extends LanguageServerLauncherTemplate {
         }
     }
 
-    static {
-        description = new LanguageDescription();
-        description.setFileExtensions(asList(EXTENSIONS));
-        description.setLanguageId(LANGUAGE_ID);
-        description.setMimeTypes(asList(MIME_TYPES));
+    @Override
+    public void onServerInitialized(LanguageServerLauncher launcher, 
+                                    LanguageServer server,
+                                    ServerCapabilities capabilities,
+                                    String projectPath) {
+        Endpoint endpoint = ServiceEndpoints.toEndpoint(server);
+        JsonExtension serviceObject = ServiceEndpoints.toServiceObject(endpoint, JsonExtension.class);
+        Map<String, String[]> associations = new HashMap<>();
+        associations.put("/*.schema.json", new String[]{"http://json-schema.org/draft-04/schema#"});
+        associations.put("/bower.json", new String[]{"http://json.schemastore.org/bower"});
+        associations.put("/.bower.json", new String[]{"http://json.schemastore.org/bower"});
+        associations.put("/.bowerrc", new String[]{"http://json.schemastore.org/bowerrc"});
+        associations.put("/composer.json", new String[]{"https://getcomposer.org/schema.json"});
+        associations.put("/package.json", new String[]{"http://json.schemastore.org/package"});
+        associations.put("/jsconfig.json", new String[]{"http://json.schemastore.org/jsconfig"});
+        associations.put("/tsconfig.json", new String[]{"http://json.schemastore.org/tsconfig"});
+        serviceObject.jsonSchemaAssociation(associations);
+    }
+
+    public LanguageServerDescription getDescription() {
+        return DESCRIPTION;
+    }
+
+    private static LanguageServerDescription createServerDescription() {
+        LanguageServerDescription description = new LanguageServerDescription("org.eclipse.che.plugin.json.languageserver", null,
+                        Arrays.asList(new DocumentFilter(JsonModule.LANGUAGE_ID, REGEX, null)));
+        return description;
     }
 }

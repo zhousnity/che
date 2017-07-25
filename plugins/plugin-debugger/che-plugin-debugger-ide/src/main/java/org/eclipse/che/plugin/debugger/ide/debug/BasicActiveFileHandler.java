@@ -16,6 +16,7 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.inject.Inject;
 
 import org.eclipse.che.api.debug.shared.model.Location;
+import org.eclipse.che.api.project.shared.dto.SearchResultDto;
 import org.eclipse.che.api.promises.client.Operation;
 import org.eclipse.che.api.promises.client.OperationException;
 import org.eclipse.che.api.promises.client.PromiseError;
@@ -28,7 +29,10 @@ import org.eclipse.che.ide.api.editor.texteditor.TextEditor;
 import org.eclipse.che.ide.api.resources.File;
 import org.eclipse.che.ide.api.resources.Project;
 import org.eclipse.che.ide.api.resources.Resource;
+import org.eclipse.che.ide.api.resources.SearchResult;
 import org.eclipse.che.ide.api.resources.VirtualFile;
+
+import java.util.List;
 
 /**
  * @author Anatoliy Bazko
@@ -144,15 +148,15 @@ public class BasicActiveFileHandler implements ActiveFileHandler {
     }
 
     protected void trySearchSource(final Location location, final AsyncCallback<VirtualFile> callback) {
-        appContext.getWorkspaceRoot().search(location.getTarget(), "").then(new Operation<Resource[]>() {
+        appContext.getWorkspaceRoot().search(location.getTarget(), "").then(new Operation<List<SearchResult>>() {
             @Override
-            public void apply(Resource[] resources) throws OperationException {
-                if (resources.length == 0) {
+            public void apply(List<SearchResult> resources) throws OperationException {
+                if (resources.isEmpty()) {
                     callback.onFailure(new IllegalArgumentException(location.getTarget() + " not found."));
                     return;
                 }
 
-                appContext.getWorkspaceRoot().getFile(resources[0].getLocation()).then(new Operation<Optional<File>>() {
+                appContext.getWorkspaceRoot().getFile(resources.get(0).getPath()).then(new Operation<Optional<File>>() {
                     @Override
                     public void apply(Optional<File> file) throws OperationException {
                         if (file.isPresent()) {

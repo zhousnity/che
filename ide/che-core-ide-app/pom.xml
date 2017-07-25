@@ -16,7 +16,7 @@
     <parent>
         <artifactId>che-core-ide-parent</artifactId>
         <groupId>org.eclipse.che.core</groupId>
-        <version>5.12.0-SNAPSHOT</version>
+        <version>5.16.0-SNAPSHOT</version>
     </parent>
     <artifactId>che-core-ide-app</artifactId>
     <packaging>jar</packaging>
@@ -111,10 +111,6 @@
         </dependency>
         <dependency>
             <groupId>org.eclipse.che.core</groupId>
-            <artifactId>che-core-commons-lang</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.che.core</groupId>
             <artifactId>che-core-ide-api</artifactId>
         </dependency>
         <dependency>
@@ -167,6 +163,11 @@
         <dependency>
             <groupId>org.easytesting</groupId>
             <artifactId>fest-assert</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.che.core</groupId>
+            <artifactId>che-core-commons-lang</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -335,6 +336,17 @@
                         <exclude>**/*.png</exclude>
                         <exclude>**/*.gif</exclude>
                         <exclude>**/*.jpg</exclude>
+                        <exclude>**/OutputCustomizer.java</exclude>
+                        <exclude>**/AbstractOutputCustomizer.java</exclude>
+                        <exclude>**/BaseOutputCustomizerTest.java</exclude>
+                        <exclude>**/JavaOutputCustomizer.java</exclude>
+                        <exclude>**/JavaOutputCustomizerTest.java</exclude>
+                        <exclude>**/CompoundOutputCustomizer.java</exclude>
+                        <exclude>**/CompoundOutputCustomizerTest.java</exclude>
+                        <exclude>**/CSharpOutputCustomizer.java</exclude>
+                        <exclude>**/CSharpOutputCustomizerTest.java</exclude>
+                        <exclude>**/CPPOutputCustomizer.java</exclude>
+                        <exclude>**/CPPOutputCustomizerTest.java</exclude>
                     </excludes>
                 </configuration>
             </plugin>

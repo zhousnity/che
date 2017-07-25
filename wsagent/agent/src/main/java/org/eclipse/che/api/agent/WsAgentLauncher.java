@@ -91,7 +91,8 @@ public class WsAgentLauncher implements AgentLauncher {
             throw new MachineException(e.getServiceError());
         }
 
-        String script = agent.getScript() + "\n" + firstNonNull(wsAgentRunCommand, DEFAULT_WS_AGENT_RUN_COMMAND);
+        String script = agent.getScript() + "\n" + firstNonNull("export JPDA_ADDRESS=\"4403\" && ~/che/ws-agent/bin/catalina.sh jpda run",
+                                                                DEFAULT_WS_AGENT_RUN_COMMAND);
 
         final String wsAgentPingUrl = wsAgentPingRequest.getUrl();
         try {
