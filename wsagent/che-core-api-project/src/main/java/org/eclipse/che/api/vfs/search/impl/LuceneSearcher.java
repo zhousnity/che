@@ -10,8 +10,19 @@
  *******************************************************************************/
 package org.eclipse.che.api.vfs.search.impl;
 
-import com.google.common.io.CharStreams;
+import static com.google.common.collect.Lists.newArrayList;
 
+import com.google.common.io.CharStreams;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
@@ -55,19 +66,6 @@ import org.eclipse.che.api.vfs.search.SearchResultEntry;
 import org.eclipse.che.api.vfs.search.Searcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-
-import static com.google.common.collect.Lists.newArrayList;
 
 /**
  * Lucene based searcher.
@@ -215,12 +213,13 @@ public abstract class LuceneSearcher implements Searcher {
             final int totalHitsNum = topDocs.totalHits;
 
             List<SearchResultEntry> results = newArrayList();
-            List<OffsetData> offsetData = query.isIncludePositions() ? new ArrayList<>() : Collections.emptyList();
+            List<OffsetData> offsetData = Collections.emptyList();
             for (int i = 0; i < topDocs.scoreDocs.length; i++) {
                 ScoreDoc scoreDoc = topDocs.scoreDocs[i];
                 int docId = scoreDoc.doc;
                 Document doc = luceneSearcher.doc(docId);
                 if (query.isIncludePositions()) {
+                    offsetData = new ArrayList<>() ;
                     String txt = doc.get(TEXT_FIELD);
                     if (txt != null) {
                         IndexReader reader = luceneSearcher.getIndexReader();
