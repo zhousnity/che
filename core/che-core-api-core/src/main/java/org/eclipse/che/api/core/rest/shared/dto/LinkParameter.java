@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,13 +7,12 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.api.core.rest.shared.dto;
 
+import java.util.List;
 import org.eclipse.che.api.core.rest.shared.ParameterType;
 import org.eclipse.che.dto.shared.DTO;
-
-import java.util.List;
 
 /**
  * Describes one query parameter of the request.
@@ -25,111 +24,106 @@ import java.util.List;
  */
 @DTO
 public interface LinkParameter {
-    /**
-     * Get name of parameter.
-     *
-     * @return name of parameter
-     */
-    String getName();
 
-    LinkParameter withName(String name);
+  /**
+   * Get name of parameter.
+   *
+   * @return name of parameter
+   */
+  String getName();
 
-    /**
-     * Set name of parameter.
-     *
-     * @param name
-     *         name of parameter
-     */
-    void setName(String name);
+  LinkParameter withName(String name);
 
-    /**
-     * Get defaultValue of parameter.
-     *
-     * @return defaultValue of parameter
-     */
-    String getDefaultValue();
+  /**
+   * Set name of parameter.
+   *
+   * @param name name of parameter
+   */
+  void setName(String name);
 
-    LinkParameter withDefaultValue(String defaultValue);
+  /**
+   * Get defaultValue of parameter.
+   *
+   * @return defaultValue of parameter
+   */
+  String getDefaultValue();
 
-    /**
-     * Set defaultValue of parameter.
-     *
-     * @param defaultValue
-     *         defaultValue of parameter
-     */
-    void setDefaultValue(String defaultValue);
+  LinkParameter withDefaultValue(String defaultValue);
 
-    /**
-     * Get optional description of parameter.
-     *
-     * @return optional description of parameter
-     * @see org.eclipse.che.api.core.rest.annotations.Description
-     */
-    String getDescription();
+  /**
+   * Set defaultValue of parameter.
+   *
+   * @param defaultValue defaultValue of parameter
+   */
+  void setDefaultValue(String defaultValue);
 
-    LinkParameter withDescription(String description);
+  /**
+   * Get optional description of parameter.
+   *
+   * @return optional description of parameter
+   * @see org.eclipse.che.api.core.rest.annotations.Description
+   */
+  String getDescription();
 
-    /**
-     * Set optional description of parameter.
-     *
-     * @param description
-     *         optional description of parameter
-     * @see org.eclipse.che.api.core.rest.annotations.Description
-     */
-    void setDescription(String description);
+  LinkParameter withDescription(String description);
 
-    /**
-     * Get type of parameter.
-     *
-     * @return type of parameter
-     * @see org.eclipse.che.api.core.rest.shared.ParameterType
-     */
-    ParameterType getType();
+  /**
+   * Set optional description of parameter.
+   *
+   * @param description optional description of parameter
+   * @see org.eclipse.che.api.core.rest.annotations.Description
+   */
+  void setDescription(String description);
 
-    LinkParameter withType(ParameterType type);
+  /**
+   * Get type of parameter.
+   *
+   * @return type of parameter
+   * @see org.eclipse.che.api.core.rest.shared.ParameterType
+   */
+  ParameterType getType();
 
-    /**
-     * Set type of parameter.
-     *
-     * @param type
-     *         type of parameter
-     * @see ParameterType
-     */
-    void setType(ParameterType type);
+  LinkParameter withType(ParameterType type);
 
-    /**
-     * Reports whether the parameter is mandatory.
-     *
-     * @return {@code true} if parameter is required and {@code false} otherwise
-     * @see org.eclipse.che.api.core.rest.annotations.Required
-     */
-    boolean isRequired();
+  /**
+   * Set type of parameter.
+   *
+   * @param type type of parameter
+   * @see ParameterType
+   */
+  void setType(ParameterType type);
 
-    LinkParameter withRequired(boolean required);
+  /**
+   * Reports whether the parameter is mandatory.
+   *
+   * @return {@code true} if parameter is required and {@code false} otherwise
+   * @see org.eclipse.che.api.core.rest.annotations.Required
+   */
+  boolean isRequired();
 
-    /**
-     * @param required
-     *         {@code true} if parameter is required and {@code false} otherwise
-     * @see org.eclipse.che.api.core.rest.annotations.Required
-     */
-    void setRequired(boolean required);
+  LinkParameter withRequired(boolean required);
 
-    /**
-     * Get optional list of constraint strings.
-     *
-     * @return optional list of constraint strings
-     * @see org.eclipse.che.api.core.rest.annotations.Valid
-     */
-    List<String> getValid();
+  /**
+   * @param required {@code true} if parameter is required and {@code false} otherwise
+   * @see org.eclipse.che.api.core.rest.annotations.Required
+   */
+  void setRequired(boolean required);
 
-    LinkParameter withValid(List<String> valid);
+  /**
+   * Get optional list of constraint strings.
+   *
+   * @return optional list of constraint strings
+   * @see org.eclipse.che.api.core.rest.annotations.Valid
+   */
+  List<String> getValid();
 
-    /**
-     * Set optional list of constraint strings.
-     *
-     * @param valid
-     *         optional list of constraint strings
-     * @see org.eclipse.che.api.core.rest.annotations.Valid
-     */
-    void setValid(List<String> valid);
+  LinkParameter withValid(List<String> valid);
+
+  /**
+   * Set optional list of constraint strings.
+   *
+   * @param valid optional list of constraint strings
+   * @see org.eclipse.che.api.core.rest.annotations.Valid
+   */
+  void setValid(List<String> valid);
 }

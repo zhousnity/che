@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,7 +7,7 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.dto.server;
 
 import com.google.gson.JsonElement;
@@ -18,13 +18,14 @@ import com.google.gson.JsonElement;
  * @author andrew00x
  */
 public interface DtoProvider<DTO> {
-    Class<? extends DTO> getImplClass();
 
-    DTO fromJson(String json);
+  Class<? extends DTO> getImplClass();
 
-    DTO fromJson(JsonElement json);
+  DTO fromJson(String json);
 
-    DTO newInstance();
+  DTO fromJson(JsonElement json);
 
-    DTO clone(DTO origin);
+  DTO newInstance();
+
+  DTO clone(DTO origin);
 }

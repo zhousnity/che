@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,19 +7,17 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.api.core.model.project;
 
 import java.util.Map;
 
-/**
- * @author gazarenkov
- */
+/** @author gazarenkov */
 public interface SourceStorage {
 
-    String getType();
+  String getType();
 
-    String getLocation();
+  String getLocation();
 
-    Map<String, String> getParameters();
+  Map<String, String> getParameters();
 }

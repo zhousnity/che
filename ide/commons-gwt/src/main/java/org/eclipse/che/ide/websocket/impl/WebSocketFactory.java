@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,15 +7,15 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.ide.websocket.impl;
 
 /**
- * Guice factory interface to create a web socket connection based on an URL
- * with all related dependencies injected
+ * Guice factory interface to create a web socket connection based on an URL with all related
+ * dependencies injected
  *
  * @author Dmitry Kuleshov
  */
 public interface WebSocketFactory {
-    WebSocketConnection create(String url);
+  WebSocketConnection create(String url);
 }

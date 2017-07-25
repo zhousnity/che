@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,7 +7,7 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.api.core.util;
 
 /**
@@ -16,23 +16,24 @@ package org.eclipse.che.api.core.util;
  * @author andrew00x
  */
 public final class CancellableProcessWrapper implements Cancellable {
-    private final Process  process;
-    private final Callback callback;
 
-    public CancellableProcessWrapper(Process process) {
-        this(process, null);
-    }
+  private final Process process;
+  private final Callback callback;
 
-    public CancellableProcessWrapper(Process process, Callback callback) {
-        this.process = process;
-        this.callback = callback;
-    }
+  public CancellableProcessWrapper(Process process) {
+    this(process, null);
+  }
 
-    @Override
-    public void cancel() {
-        ProcessUtil.kill(process);
-        if (callback != null) {
-            callback.cancelled(this);
-        }
+  public CancellableProcessWrapper(Process process, Callback callback) {
+    this.process = process;
+    this.callback = callback;
+  }
+
+  @Override
+  public void cancel() {
+    ProcessUtil.kill(process);
+    if (callback != null) {
+      callback.cancelled(this);
     }
+  }
 }

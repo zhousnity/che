@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,31 +7,32 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.commons.lang.concurrent;
 
 /** @author andrew00x */
 class CopyThreadLocalRunnable implements Runnable {
-    private final Runnable                                     wrapped;
-    private final ThreadLocalPropagateContext.ThreadLocalState threadLocalState;
 
-    CopyThreadLocalRunnable(Runnable wrapped) {
-        // Called from main thread. Copy the current values of all the ThreadLocal variables which registered in ThreadLocalPropagateContext.
-        this.wrapped = wrapped;
-        this.threadLocalState = ThreadLocalPropagateContext.currentThreadState();
-    }
+  private final Runnable wrapped;
+  private final ThreadLocalPropagateContext.ThreadLocalState threadLocalState;
 
-    @Override
-    public void run() {
-        try {
-            threadLocalState.propagate();
-            wrapped.run();
-        } finally {
-            threadLocalState.cleanup();
-        }
-    }
+  CopyThreadLocalRunnable(Runnable wrapped) {
+    // Called from main thread. Copy the current values of all the ThreadLocal variables which registered in ThreadLocalPropagateContext.
+    this.wrapped = wrapped;
+    this.threadLocalState = ThreadLocalPropagateContext.currentThreadState();
+  }
 
-    public Runnable getWrapped() {
-        return wrapped;
+  @Override
+  public void run() {
+    try {
+      threadLocalState.propagate();
+      wrapped.run();
+    } finally {
+      threadLocalState.cleanup();
     }
+  }
+
+  public Runnable getWrapped() {
+    return wrapped;
+  }
 }

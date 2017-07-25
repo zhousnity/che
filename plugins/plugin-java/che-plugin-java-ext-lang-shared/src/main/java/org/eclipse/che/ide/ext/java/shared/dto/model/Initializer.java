@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,7 +7,7 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.ide.ext.java.shared.dto.model;
 
 import org.eclipse.che.dto.shared.DTO;
@@ -19,5 +19,5 @@ import org.eclipse.che.dto.shared.DTO;
  */
 @DTO
 public interface Initializer extends Member {
-    // interface used as a marker: defines no member
+  // interface used as a marker: defines no member
 }

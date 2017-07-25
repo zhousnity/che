@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,9 +7,13 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.api.core.jsonrpc.commons.transmission;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.slf4j.LoggerFactory.getLogger;
+
+import java.util.List;
 import org.eclipse.che.api.core.jsonrpc.commons.JsonRpcMarshaller;
 import org.eclipse.che.api.core.jsonrpc.commons.JsonRpcParams;
 import org.eclipse.che.api.core.jsonrpc.commons.JsonRpcPromise;
@@ -18,216 +22,311 @@ import org.eclipse.che.api.core.jsonrpc.commons.ResponseDispatcher;
 import org.eclipse.che.api.core.websocket.commons.WebSocketMessageTransmitter;
 import org.slf4j.Logger;
 
-import java.util.List;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.slf4j.LoggerFactory.getLogger;
-
 /**
- * Configurator defines the type of a result (if present) and send a request.
- * Result types that are supported: {@link String}, {@link Boolean},
- * {@link Double}, {@link Void} and DTO. This configurator is used when we
- * have defined request params as a single object.
+ * Configurator defines the type of a result (if present) and send a request. Result types that are
+ * supported: {@link String}, {@link Boolean}, {@link Double}, {@link Void} and DTO. This
+ * configurator is used when we have defined request params as a single object.
  *
- * @param <P>
- *         type of params objects
+ * @param <P> type of params objects
  */
 public class SendConfiguratorFromOne<P> {
-    private final static Logger LOGGER = getLogger(SendConfiguratorFromOne.class);
 
-    private final ResponseDispatcher          dispatcher;
-    private final WebSocketMessageTransmitter transmitter;
-    private final JsonRpcMarshaller           marshaller;
+  private static final Logger LOGGER = getLogger(SendConfiguratorFromOne.class);
 
-    private final String method;
-    private final P      pValue;
-    private final String endpointId;
+  private final ResponseDispatcher dispatcher;
+  private final WebSocketMessageTransmitter transmitter;
+  private final JsonRpcMarshaller marshaller;
 
-    SendConfiguratorFromOne(JsonRpcMarshaller marshaller, ResponseDispatcher dispatcher, WebSocketMessageTransmitter transmitter,
-                            String method, P pValue, String endpointId) {
-        this.marshaller = marshaller;
-        this.dispatcher = dispatcher;
-        this.transmitter = transmitter;
+  private final String method;
+  private final P pValue;
+  private final String endpointId;
 
-        this.method = method;
-        this.pValue = pValue;
-        this.endpointId = endpointId;
-    }
+  SendConfiguratorFromOne(
+      JsonRpcMarshaller marshaller,
+      ResponseDispatcher dispatcher,
+      WebSocketMessageTransmitter transmitter,
+      String method,
+      P pValue,
+      String endpointId) {
+    this.marshaller = marshaller;
+    this.dispatcher = dispatcher;
+    this.transmitter = transmitter;
 
-    public void sendAndSkipResult() {
-        LOGGER.debug("Transmitting request: " +
-                     "endpoint ID: " + endpointId + ", " +
-                     "method: " + method + ", " +
-                     (pValue != null ? "params object class: " + pValue.getClass() + ", " : "") +
-                     "params list value" + pValue);
+    this.method = method;
+    this.pValue = pValue;
+    this.endpointId = endpointId;
+  }
 
-        transmitNotification();
-    }
+  public void sendAndSkipResult() {
+    LOGGER.debug(
+        "Transmitting request: "
+            + "endpoint ID: "
+            + endpointId
+            + ", "
+            + "method: "
+            + method
+            + ", "
+            + (pValue != null ? "params object class: " + pValue.getClass() + ", " : "")
+            + "params list value"
+            + pValue);
 
-    public <R> JsonRpcPromise<R> sendAndReceiveResultAsDto(final Class<R> rClass) {
-        return sendAndReceiveResultAsDto(rClass, 0);
-    }
+    transmitNotification();
+  }
 
-    public <R> JsonRpcPromise<R> sendAndReceiveResultAsDto(final Class<R> rClass, int timeoutInMillis) {
-        checkNotNull(rClass, "Result class value must not be null");
+  public <R> JsonRpcPromise<R> sendAndReceiveResultAsDto(final Class<R> rClass) {
+    return sendAndReceiveResultAsDto(rClass, 0);
+  }
 
-        final String requestId = transmitRequest();
+  public <R> JsonRpcPromise<R> sendAndReceiveResultAsDto(
+      final Class<R> rClass, int timeoutInMillis) {
+    checkNotNull(rClass, "Result class value must not be null");
 
-        LOGGER.debug("Transmitting request: " +
-                     "endpoint ID: " + endpointId + ", " +
-                     "request ID: " + requestId + ", " +
-                     "method: " + method + ", " +
-                     (pValue != null ? "params object class: " + pValue.getClass() + ", " : "") +
-                     "params list value" + pValue + ", " +
-                     "result object class: " + rClass);
+    final String requestId = transmitRequest();
 
-        return dispatcher.registerPromiseForSingleObject(endpointId, requestId, rClass, timeoutInMillis);
-    }
+    LOGGER.debug(
+        "Transmitting request: "
+            + "endpoint ID: "
+            + endpointId
+            + ", "
+            + "request ID: "
+            + requestId
+            + ", "
+            + "method: "
+            + method
+            + ", "
+            + (pValue != null ? "params object class: " + pValue.getClass() + ", " : "")
+            + "params list value"
+            + pValue
+            + ", "
+            + "result object class: "
+            + rClass);
 
-    public JsonRpcPromise<String> sendAndReceiveResultAsString() {
-        return sendAndReceiveResultAsString(0);
-    }
+    return dispatcher.registerPromiseForSingleObject(
+        endpointId, requestId, rClass, timeoutInMillis);
+  }
 
-    public JsonRpcPromise<String> sendAndReceiveResultAsString(int timeoutInMillis) {
-        final String requestId = transmitRequest();
+  public JsonRpcPromise<String> sendAndReceiveResultAsString() {
+    return sendAndReceiveResultAsString(0);
+  }
 
-        LOGGER.debug("Transmitting request: " +
-                     "endpoint ID: " + endpointId + ", " +
-                     "request ID: " + requestId + ", " +
-                     "method: " + method + ", " +
-                     (pValue != null ? "params object class: " + pValue.getClass() + ", " : "") +
-                     "params list value" + pValue + ", " +
-                     "result object class: " + String.class);
+  public JsonRpcPromise<String> sendAndReceiveResultAsString(int timeoutInMillis) {
+    final String requestId = transmitRequest();
 
-        return dispatcher.registerPromiseForSingleObject(endpointId, requestId, String.class, timeoutInMillis);
-    }
+    LOGGER.debug(
+        "Transmitting request: "
+            + "endpoint ID: "
+            + endpointId
+            + ", "
+            + "request ID: "
+            + requestId
+            + ", "
+            + "method: "
+            + method
+            + ", "
+            + (pValue != null ? "params object class: " + pValue.getClass() + ", " : "")
+            + "params list value"
+            + pValue
+            + ", "
+            + "result object class: "
+            + String.class);
 
-    public JsonRpcPromise<Double> sendAndReceiveResultAsDouble() {
-        return sendAndReceiveResultAsDouble(0);
-    }
+    return dispatcher.registerPromiseForSingleObject(
+        endpointId, requestId, String.class, timeoutInMillis);
+  }
 
-    public JsonRpcPromise<Double> sendAndReceiveResultAsDouble(int timeoutInMillis) {
-        final String requestId = transmitRequest();
+  public JsonRpcPromise<Double> sendAndReceiveResultAsDouble() {
+    return sendAndReceiveResultAsDouble(0);
+  }
 
-        LOGGER.debug("Transmitting request: " +
-                     "endpoint ID: " + endpointId + ", " +
-                     "request ID: " + requestId + ", " +
-                     "method: " + method + ", " +
-                     (pValue != null ? "params object class: " + pValue.getClass() + ", " : "") +
-                     "params list value" + pValue + ", " +
-                     "result object class: " + Double.class);
+  public JsonRpcPromise<Double> sendAndReceiveResultAsDouble(int timeoutInMillis) {
+    final String requestId = transmitRequest();
 
-        return dispatcher.registerPromiseForSingleObject(endpointId, requestId, Double.class, timeoutInMillis);
-    }
+    LOGGER.debug(
+        "Transmitting request: "
+            + "endpoint ID: "
+            + endpointId
+            + ", "
+            + "request ID: "
+            + requestId
+            + ", "
+            + "method: "
+            + method
+            + ", "
+            + (pValue != null ? "params object class: " + pValue.getClass() + ", " : "")
+            + "params list value"
+            + pValue
+            + ", "
+            + "result object class: "
+            + Double.class);
 
-    public JsonRpcPromise<Boolean> sendAndReceiveResultAsBoolean() {
-        return sendAndReceiveResultAsBoolean(0);
-    }
+    return dispatcher.registerPromiseForSingleObject(
+        endpointId, requestId, Double.class, timeoutInMillis);
+  }
 
-    public JsonRpcPromise<Boolean> sendAndReceiveResultAsBoolean(int timeoutInMillis) {
-        final String requestId = transmitRequest();
+  public JsonRpcPromise<Boolean> sendAndReceiveResultAsBoolean() {
+    return sendAndReceiveResultAsBoolean(0);
+  }
 
-        LOGGER.debug("Transmitting request: " +
-                     "endpoint ID: " + endpointId + ", " +
-                     "request ID: " + requestId + ", " +
-                     "method: " + method + ", " +
-                     (pValue != null ? "params object class: " + pValue.getClass() + ", " : "") +
-                     "params list value" + pValue + ", " +
-                     "result object class: " + Boolean.class);
+  public JsonRpcPromise<Boolean> sendAndReceiveResultAsBoolean(int timeoutInMillis) {
+    final String requestId = transmitRequest();
 
-        return dispatcher.registerPromiseForSingleObject(endpointId, requestId, Boolean.class, timeoutInMillis);
-    }
+    LOGGER.debug(
+        "Transmitting request: "
+            + "endpoint ID: "
+            + endpointId
+            + ", "
+            + "request ID: "
+            + requestId
+            + ", "
+            + "method: "
+            + method
+            + ", "
+            + (pValue != null ? "params object class: " + pValue.getClass() + ", " : "")
+            + "params list value"
+            + pValue
+            + ", "
+            + "result object class: "
+            + Boolean.class);
 
-    public <R> JsonRpcPromise<List<R>> sendAndReceiveResultAsListOfDto(Class<R> rClass) {
-        return sendAndReceiveResultAsListOfDto(rClass, 0);
-    }
+    return dispatcher.registerPromiseForSingleObject(
+        endpointId, requestId, Boolean.class, timeoutInMillis);
+  }
 
-    public <R> JsonRpcPromise<List<R>> sendAndReceiveResultAsListOfDto(Class<R> rClass, int timeoutInMillis) {
-        checkNotNull(rClass, "Result class value must not be null");
+  public <R> JsonRpcPromise<List<R>> sendAndReceiveResultAsListOfDto(Class<R> rClass) {
+    return sendAndReceiveResultAsListOfDto(rClass, 0);
+  }
 
-        final String requestId = transmitRequest();
+  public <R> JsonRpcPromise<List<R>> sendAndReceiveResultAsListOfDto(
+      Class<R> rClass, int timeoutInMillis) {
+    checkNotNull(rClass, "Result class value must not be null");
 
-        LOGGER.debug("Transmitting request: " +
-                     "endpoint ID: " + endpointId + ", " +
-                     "request ID: " + requestId + ", " +
-                     "method: " + method + ", " +
-                     (pValue != null ? "params object class: " + pValue.getClass() + ", " : "") +
-                     "params list value" + pValue + ", " +
-                     "result list items class: " + rClass);
+    final String requestId = transmitRequest();
 
-        return dispatcher.registerPromiseForListOfObjects(endpointId, requestId, rClass, timeoutInMillis);
-    }
+    LOGGER.debug(
+        "Transmitting request: "
+            + "endpoint ID: "
+            + endpointId
+            + ", "
+            + "request ID: "
+            + requestId
+            + ", "
+            + "method: "
+            + method
+            + ", "
+            + (pValue != null ? "params object class: " + pValue.getClass() + ", " : "")
+            + "params list value"
+            + pValue
+            + ", "
+            + "result list items class: "
+            + rClass);
 
-    public JsonRpcPromise<List<String>> sendAndReceiveResultAsListOfString() {
-        return sendAndReceiveResultAsListOfString(0);
-    }
+    return dispatcher.registerPromiseForListOfObjects(
+        endpointId, requestId, rClass, timeoutInMillis);
+  }
 
-    public JsonRpcPromise<List<String>> sendAndReceiveResultAsListOfString(int timeoutInMillis) {
-        final String requestId = transmitRequest();
+  public JsonRpcPromise<List<String>> sendAndReceiveResultAsListOfString() {
+    return sendAndReceiveResultAsListOfString(0);
+  }
 
-        LOGGER.debug("Transmitting request: " +
-                     "endpoint ID: " + endpointId + ", " +
-                     "request ID: " + requestId + ", " +
-                     "method: " + method + ", " +
-                     (pValue != null ? "params object class: " + pValue.getClass() + ", " : "") +
-                     "params list value" + pValue + ", " +
-                     "result list items class: " + String.class);
+  public JsonRpcPromise<List<String>> sendAndReceiveResultAsListOfString(int timeoutInMillis) {
+    final String requestId = transmitRequest();
 
-        return dispatcher.registerPromiseForListOfObjects(endpointId, requestId, String.class, timeoutInMillis);
-    }
+    LOGGER.debug(
+        "Transmitting request: "
+            + "endpoint ID: "
+            + endpointId
+            + ", "
+            + "request ID: "
+            + requestId
+            + ", "
+            + "method: "
+            + method
+            + ", "
+            + (pValue != null ? "params object class: " + pValue.getClass() + ", " : "")
+            + "params list value"
+            + pValue
+            + ", "
+            + "result list items class: "
+            + String.class);
 
-    public JsonRpcPromise<List<Boolean>> sendAndReceiveResultAsListOfBoolean() {
-        return sendAndReceiveResultAsListOfBoolean(0);
-    }
+    return dispatcher.registerPromiseForListOfObjects(
+        endpointId, requestId, String.class, timeoutInMillis);
+  }
 
-    public JsonRpcPromise<List<Boolean>> sendAndReceiveResultAsListOfBoolean(int timeoutInMillis) {
-        final String requestId = transmitRequest();
+  public JsonRpcPromise<List<Boolean>> sendAndReceiveResultAsListOfBoolean() {
+    return sendAndReceiveResultAsListOfBoolean(0);
+  }
 
-        LOGGER.debug("Transmitting request: " +
-                     "endpoint ID: " + endpointId + ", " +
-                     "request ID: " + requestId + ", " +
-                     "method: " + method + ", " +
-                     (pValue != null ? "params object class: " + pValue.getClass() + ", " : "") +
-                     "params list value" + pValue + ", " +
-                     "result list items class: " + Boolean.class);
+  public JsonRpcPromise<List<Boolean>> sendAndReceiveResultAsListOfBoolean(int timeoutInMillis) {
+    final String requestId = transmitRequest();
 
-        return dispatcher.registerPromiseForListOfObjects(endpointId, requestId, Boolean.class, timeoutInMillis);
-    }
+    LOGGER.debug(
+        "Transmitting request: "
+            + "endpoint ID: "
+            + endpointId
+            + ", "
+            + "request ID: "
+            + requestId
+            + ", "
+            + "method: "
+            + method
+            + ", "
+            + (pValue != null ? "params object class: " + pValue.getClass() + ", " : "")
+            + "params list value"
+            + pValue
+            + ", "
+            + "result list items class: "
+            + Boolean.class);
 
-    public JsonRpcPromise<Void> sendAndReceiveResultAsEmpty() {
-        return sendAndReceiveResultAsEmpty(0);
-    }
+    return dispatcher.registerPromiseForListOfObjects(
+        endpointId, requestId, Boolean.class, timeoutInMillis);
+  }
 
-    public JsonRpcPromise<Void> sendAndReceiveResultAsEmpty(int timeoutInMillis) {
-        final String requestId = transmitRequest();
+  public JsonRpcPromise<Void> sendAndReceiveResultAsEmpty() {
+    return sendAndReceiveResultAsEmpty(0);
+  }
 
-        LOGGER.debug("Transmitting request: " +
-                     "endpoint ID: " + endpointId + ", " +
-                     "request ID: " + requestId + ", " +
-                     "method: " + method + ", " +
-                     (pValue != null ? "params object class: " + pValue.getClass() + ", " : "") +
-                     "params list value" + pValue + ", " +
-                     "result list items class: " + Void.class);
+  public JsonRpcPromise<Void> sendAndReceiveResultAsEmpty(int timeoutInMillis) {
+    final String requestId = transmitRequest();
 
-        return dispatcher.registerPromiseForSingleObject(endpointId, requestId, Void.class, timeoutInMillis);
-    }
+    LOGGER.debug(
+        "Transmitting request: "
+            + "endpoint ID: "
+            + endpointId
+            + ", "
+            + "request ID: "
+            + requestId
+            + ", "
+            + "method: "
+            + method
+            + ", "
+            + (pValue != null ? "params object class: " + pValue.getClass() + ", " : "")
+            + "params list value"
+            + pValue
+            + ", "
+            + "result list items class: "
+            + Void.class);
 
-    private void transmitNotification() {
-        JsonRpcParams params = new JsonRpcParams(pValue);
-        JsonRpcRequest request = new JsonRpcRequest(null, method, params);
-        String message = marshaller.marshall(request);
-        transmitter.transmit(endpointId, message);
-    }
+    return dispatcher.registerPromiseForSingleObject(
+        endpointId, requestId, Void.class, timeoutInMillis);
+  }
 
-    private String transmitRequest() {
-        Integer id = MethodNameConfigurator.id.incrementAndGet();
-        String requestId = id.toString();
+  private void transmitNotification() {
+    JsonRpcParams params = new JsonRpcParams(pValue);
+    JsonRpcRequest request = new JsonRpcRequest(null, method, params);
+    String message = marshaller.marshall(request);
+    transmitter.transmit(endpointId, message);
+  }
 
-        JsonRpcParams params = new JsonRpcParams(pValue);
-        JsonRpcRequest request = new JsonRpcRequest(requestId, method, params);
-        String message = marshaller.marshall(request);
-        transmitter.transmit(endpointId, message);
+  private String transmitRequest() {
+    Integer id = MethodNameConfigurator.id.incrementAndGet();
+    String requestId = id.toString();
 
-        return requestId;
-    }
+    JsonRpcParams params = new JsonRpcParams(pValue);
+    JsonRpcRequest request = new JsonRpcRequest(requestId, method, params);
+    String message = marshaller.marshall(request);
+    transmitter.transmit(endpointId, message);
+
+    return requestId;
+  }
 }

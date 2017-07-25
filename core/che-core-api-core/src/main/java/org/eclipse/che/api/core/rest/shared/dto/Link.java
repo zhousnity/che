@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,14 +7,13 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.api.core.rest.shared.dto;
 
+import java.util.List;
 import org.eclipse.che.dto.shared.DTO;
 import org.eclipse.che.dto.shared.DelegateRule;
 import org.eclipse.che.dto.shared.DelegateTo;
-
-import java.util.List;
 
 /**
  * Describes resource.
@@ -23,137 +22,134 @@ import java.util.List;
  */
 @DTO
 public interface Link {
-    /**
-     * Get URL of resource link.
-     *
-     * @return URL of resource link.
-     */
-    String getHref();
 
-    Link withHref(String href);
+  /**
+   * Get URL of resource link.
+   *
+   * @return URL of resource link.
+   */
+  String getHref();
 
-    /**
-     * Set URL of resource link.
-     *
-     * @param href
-     *         URL of resource link.
-     */
-    void setHref(String href);
+  Link withHref(String href);
 
-    /**
-     * Get short description of resource link.
-     *
-     * @return short description of resource link
-     */
-    String getRel();
+  /**
+   * Set URL of resource link.
+   *
+   * @param href URL of resource link.
+   */
+  void setHref(String href);
 
-    Link withRel(String rel);
+  /**
+   * Get short description of resource link.
+   *
+   * @return short description of resource link
+   */
+  String getRel();
 
-    /**
-     * Set short description of resource link.
-     *
-     * @param rel
-     *         short description of resource link
-     */
-    void setRel(String rel);
+  Link withRel(String rel);
 
-    /**
-     * Get HTTP method to use with resource.
-     *
-     * @return HTTP method to use with resource
-     */
-    String getMethod();
+  /**
+   * Set short description of resource link.
+   *
+   * @param rel short description of resource link
+   */
+  void setRel(String rel);
 
-    Link withMethod(String method);
+  /**
+   * Get HTTP method to use with resource.
+   *
+   * @return HTTP method to use with resource
+   */
+  String getMethod();
 
-    /**
-     * Set HTTP method to use with resource.
-     *
-     * @param method
-     *         HTTP method to use with resource
-     */
-    void setMethod(String method);
+  Link withMethod(String method);
 
-    /**
-     * Get media type produced by resource.
-     *
-     * @return media type produced by resource
-     */
-    String getProduces();
+  /**
+   * Set HTTP method to use with resource.
+   *
+   * @param method HTTP method to use with resource
+   */
+  void setMethod(String method);
 
-    Link withProduces(String produces);
+  /**
+   * Get media type produced by resource.
+   *
+   * @return media type produced by resource
+   */
+  String getProduces();
 
-    /**
-     * Set media type produced by resource.
-     *
-     * @param produces
-     *         media type produced by resource
-     */
-    void setProduces(String produces);
+  Link withProduces(String produces);
 
-    /**
-     * Get media type consumed by resource.
-     *
-     * @return media type consumed by resource
-     */
-    String getConsumes();
+  /**
+   * Set media type produced by resource.
+   *
+   * @param produces media type produced by resource
+   */
+  void setProduces(String produces);
 
-    Link withConsumes(String consumes);
+  /**
+   * Get media type consumed by resource.
+   *
+   * @return media type consumed by resource
+   */
+  String getConsumes();
 
-    /**
-     * Set media type consumed by resource.
-     *
-     * @param consumes
-     *         media type consumed by resource
-     */
-    void setConsumes(String consumes);
+  Link withConsumes(String consumes);
 
-    /**
-     * Get description of the query parameters (if any) of request.
-     *
-     * @return description of the query parameters (if any) of request
-     */
-    List<LinkParameter> getParameters();
+  /**
+   * Set media type consumed by resource.
+   *
+   * @param consumes media type consumed by resource
+   */
+  void setConsumes(String consumes);
 
-    @DelegateTo(client = @DelegateRule(type = LinkParameterResolver.class, method = "getParameter"),
-                server = @DelegateRule(type = LinkParameterResolver.class, method = "getParameter"))
-    LinkParameter getParameter(String parameterName);
+  /**
+   * Get description of the query parameters (if any) of request.
+   *
+   * @return description of the query parameters (if any) of request
+   */
+  List<LinkParameter> getParameters();
 
-    Link withParameters(List<LinkParameter> parameters);
+  @DelegateTo(
+    client = @DelegateRule(type = LinkParameterResolver.class, method = "getParameter"),
+    server = @DelegateRule(type = LinkParameterResolver.class, method = "getParameter")
+  )
+  LinkParameter getParameter(String parameterName);
 
-    /**
-     * Set description of the query parameters (if any) of request.
-     *
-     * @param parameters
-     *         description of the query parameters (if any) of request
-     */
-    void setParameters(List<LinkParameter> parameters);
+  Link withParameters(List<LinkParameter> parameters);
 
-    /**
-     * Get request body description.
-     *
-     * @return request body description
-     */
-    RequestBodyDescriptor getRequestBody();
+  /**
+   * Set description of the query parameters (if any) of request.
+   *
+   * @param parameters description of the query parameters (if any) of request
+   */
+  void setParameters(List<LinkParameter> parameters);
 
-    Link withRequestBody(RequestBodyDescriptor requestBody);
+  /**
+   * Get request body description.
+   *
+   * @return request body description
+   */
+  RequestBodyDescriptor getRequestBody();
 
-    /**
-     * Set request body description.
-     *
-     * @param requestBody
-     *         request body description
-     */
-    void setRequestBody(RequestBodyDescriptor requestBody);
+  Link withRequestBody(RequestBodyDescriptor requestBody);
 
-    class LinkParameterResolver {
-        public static LinkParameter getParameter(Link link, String parameterName) {
-            for (LinkParameter linkParameter : link.getParameters()) {
-                if (linkParameter.getName().equals(parameterName)){
-                    return linkParameter;
-                }
-            }
-            return null;
+  /**
+   * Set request body description.
+   *
+   * @param requestBody request body description
+   */
+  void setRequestBody(RequestBodyDescriptor requestBody);
+
+  class LinkParameterResolver {
+
+    public static LinkParameter getParameter(Link link, String parameterName) {
+      for (LinkParameter linkParameter : link.getParameters()) {
+        if (linkParameter.getName().equals(parameterName)) {
+          return linkParameter;
         }
+      }
+      return null;
     }
+  }
 }

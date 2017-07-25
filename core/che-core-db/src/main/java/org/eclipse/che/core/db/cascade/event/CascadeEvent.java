@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,22 +7,22 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.core.db.cascade.event;
 
 import org.eclipse.che.core.db.cascade.CascadeContext;
 
 /**
- * Special event type which is needed only for notification
- * in the process which can require cascade operation.
+ * Special event type which is needed only for notification in the process which can require cascade
+ * operation.
  *
- * <p>Publisher should invoke {@link #propagateException()}
- * to get cause of event canceling.
+ * <p>Publisher should invoke {@link #propagateException()} to get cause of event canceling.
  *
- * <p>Rollback of operation must be performed when subscriber
- * throws {@link Exception} during event processing.
+ * <p>Rollback of operation must be performed when subscriber throws {@link Exception} during event
+ * processing.
  *
  * <p>Usage example:
+ *
  * <pre>
  *     EventService bus = new EventService();
  *     bus.subscribe(new CascadeEventSubscriber&lt;MyEvent&gt;() {
@@ -40,22 +40,21 @@ import org.eclipse.che.core.db.cascade.CascadeContext;
  * @author Sergii Leschenko
  */
 public abstract class CascadeEvent {
-    protected final CascadeContext context = new CascadeContext();
 
-    public CascadeContext getContext() {
-        return context;
-    }
+  protected final CascadeContext context = new CascadeContext();
 
-    /**
-     * Propagates exception if subscriber throws it
-     * while event processing otherwise do nothing
-     *
-     * @throws Exception
-     *         when any subscriber throws {@link Exception}
-     */
-    public void propagateException() throws Exception {
-        if (context.isFailed()) {
-            throw context.getCause();
-        }
+  public CascadeContext getContext() {
+    return context;
+  }
+
+  /**
+   * Propagates exception if subscriber throws it while event processing otherwise do nothing
+   *
+   * @throws Exception when any subscriber throws {@link Exception}
+   */
+  public void propagateException() throws Exception {
+    if (context.isFailed()) {
+      throw context.getCause();
     }
+  }
 }

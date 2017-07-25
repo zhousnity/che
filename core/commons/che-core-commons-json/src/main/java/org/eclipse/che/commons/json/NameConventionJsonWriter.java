@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,26 +7,24 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.commons.json;
 
-
+import java.io.Writer;
 import org.everrest.core.impl.provider.json.JsonException;
 import org.everrest.core.impl.provider.json.JsonWriter;
 
-import java.io.Writer;
-
-
 public class NameConventionJsonWriter extends JsonWriter {
-    private final JsonNameConvention nameConvention;
 
-    public NameConventionJsonWriter(Writer writer, JsonNameConvention nameConvention) {
-        super(writer);
-        this.nameConvention = nameConvention;
-    }
+  private final JsonNameConvention nameConvention;
 
-    @Override
-    public void writeKey(String key) throws JsonException {
-        super.writeKey(nameConvention.toJsonName(key));
-    }
+  public NameConventionJsonWriter(Writer writer, JsonNameConvention nameConvention) {
+    super(writer);
+    this.nameConvention = nameConvention;
+  }
+
+  @Override
+  public void writeKey(String key) throws JsonException {
+    super.writeKey(nameConvention.toJsonName(key));
+  }
 }

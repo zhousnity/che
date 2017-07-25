@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,14 +7,12 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.plugin.pullrequest.client.dialogs.paste;
 
 import com.google.gwt.event.shared.EventHandler;
 
-/**
- * {@link EventHandler} for {@link PasteEvent}s.
- */
+/** {@link EventHandler} for {@link PasteEvent}s. */
 public interface PasteHandler extends EventHandler {
-    void onPaste(PasteEvent event);
+  void onPaste(PasteEvent event);
 }

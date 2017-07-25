@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,7 +7,7 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.api.project.shared;
 
 /**
@@ -18,24 +18,24 @@ package org.eclipse.che.api.project.shared;
  */
 public interface ImportProgressRecord {
 
-    /**
-     * Record line number.
-     *
-     * @return record line number
-     */
-    int getNum();
+  /**
+   * Record line number.
+   *
+   * @return record line number
+   */
+  int getNum();
 
-    /**
-     * Record line.
-     *
-     * @return record line
-     */
-    String getLine();
+  /**
+   * Record line.
+   *
+   * @return record line
+   */
+  String getLine();
 
-    /**
-     * Return project name.
-     *
-     * @return project name
-     */
-    String getProjectName();
+  /**
+   * Return project name.
+   *
+   * @return project name
+   */
+  String getProjectName();
 }

@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,25 +7,23 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.plugin.pullrequest.shared.dto;
 
 import org.eclipse.che.dto.shared.DTO;
 
-/**
- * Contribution configuration, which contains the values chosen by the user.
- */
+/** Contribution configuration, which contains the values chosen by the user. */
 @DTO
 public interface Configuration {
-    String getContributionBranchName();
+  String getContributionBranchName();
 
-    Configuration withContributionBranchName(String name);
+  Configuration withContributionBranchName(String name);
 
-    String getContributionComment();
+  String getContributionComment();
 
-    Configuration withContributionComment(String comment);
+  Configuration withContributionComment(String comment);
 
-    String getContributionTitle();
+  String getContributionTitle();
 
-    Configuration withContributionTitle(String title);
+  Configuration withContributionTitle(String title);
 }

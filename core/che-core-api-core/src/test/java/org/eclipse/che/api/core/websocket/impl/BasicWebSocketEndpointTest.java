@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,9 +7,13 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.api.core.websocket.impl;
 
+import static org.mockito.Mockito.verify;
+
+import javax.websocket.CloseReason;
+import javax.websocket.Session;
 import org.eclipse.che.api.core.websocket.commons.WebSocketMessageReceiver;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -19,11 +23,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
-import javax.websocket.CloseReason;
-import javax.websocket.Session;
-
-import static org.mockito.Mockito.verify;
-
 /**
  * Tests for {@link BasicWebSocketEndpoint}
  *
@@ -31,55 +30,46 @@ import static org.mockito.Mockito.verify;
  */
 @Listeners(MockitoTestNGListener.class)
 public class BasicWebSocketEndpointTest {
-    @Mock
-    private WebSocketSessionRegistry registry;
-    @Mock
-    private MessagesReSender         reSender;
-    @Mock
-    private WebSocketMessageReceiver receiver;
-    @InjectMocks
-    private BasicWebSocketEndpoint   endpoint;
 
-    @Mock
-    private Session session;
-    @Mock
-    private CloseReason closeReason;
+  @Mock private WebSocketSessionRegistry registry;
+  @Mock private MessagesReSender reSender;
+  @Mock private WebSocketMessageReceiver receiver;
+  @InjectMocks private BasicWebSocketEndpoint endpoint;
 
-    @BeforeMethod
-    public void setUp() throws Exception {
+  @Mock private Session session;
+  @Mock private CloseReason closeReason;
 
-    }
+  @BeforeMethod
+  public void setUp() throws Exception {}
 
-    @AfterMethod
-    public void tearDown() throws Exception {
+  @AfterMethod
+  public void tearDown() throws Exception {}
 
-    }
+  @Test
+  public void shouldAddToRegistryOnOpen() {
+    endpoint.onOpen(session, "id");
 
-    @Test
-    public void shouldAddToRegistryOnOpen(){
-        endpoint.onOpen(session, "id");
+    verify(registry).add("id", session);
+  }
 
-        verify(registry).add("id", session);
-    }
+  @Test
+  public void shouldResendOnOpen() {
+    endpoint.onOpen(session, "id");
 
-    @Test
-    public void shouldResendOnOpen(){
-        endpoint.onOpen(session, "id");
+    verify(reSender).resend("id");
+  }
 
-        verify(reSender).resend("id");
-    }
+  @Test
+  public void shouldRunReceiveOnMessage() {
+    endpoint.onMessage("message", "id");
 
-    @Test
-    public void shouldRunReceiveOnMessage(){
-        endpoint.onMessage("message", "id");
+    verify(receiver).receive("id", "message");
+  }
 
-        verify(receiver).receive("id", "message");
-    }
+  @Test
+  public void shouldRunRemoveOnClose() {
+    endpoint.onClose(closeReason, "id");
 
-    @Test
-    public void shouldRunRemoveOnClose(){
-        endpoint.onClose(closeReason, "id");
-
-        verify(registry).remove("id");
-    }
+    verify(registry).remove("id");
+  }
 }

@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,108 +7,143 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.api.core.jsonrpc.commons.reception;
-
-import org.eclipse.che.api.core.jsonrpc.commons.JsonRpcErrorTransmitter;
-import org.eclipse.che.api.core.jsonrpc.commons.RequestHandlerManager;
-import org.slf4j.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.slf4j.LoggerFactory.getLogger;
 
+import org.eclipse.che.api.core.jsonrpc.commons.RequestHandlerManager;
+import org.slf4j.Logger;
+
 /**
- * Params configurator provide means to configure params type in a
- * request that is to be handled. Params types that are supported:
- * {@link String}, {@link Boolean}, {@link Double}, {@link Void} and
- * DTO.
+ * Params configurator provide means to configure params type in a request that is to be handled.
+ * Params types that are supported: {@link String}, {@link Boolean}, {@link Double}, {@link Void}
+ * and DTO.
  */
 public class ParamsConfigurator {
-    private final static Logger LOGGER = getLogger(ParamsConfigurator.class);
 
-    private final RequestHandlerManager requestHandlerManager;
+  private static final Logger LOGGER = getLogger(ParamsConfigurator.class);
 
-    private final String method;
+  private final RequestHandlerManager requestHandlerManager;
 
-    ParamsConfigurator(RequestHandlerManager requestHandlerManager, String method) {
-        this.requestHandlerManager = requestHandlerManager;
+  private final String method;
 
-        this.method = method;
-    }
+  ParamsConfigurator(RequestHandlerManager requestHandlerManager, String method) {
+    this.requestHandlerManager = requestHandlerManager;
 
-    public <P> ResultConfiguratorFromMany<P> paramsAsListOfDto(Class<P> pClass) {
-        checkNotNull(pClass, "Params class must not be null");
+    this.method = method;
+  }
 
-        LOGGER.debug("Configuring incoming request params: " +
-                     "method: " + method + ", " +
-                     "params list items class: " + pClass);
+  public <P> ResultConfiguratorFromMany<P> paramsAsListOfDto(Class<P> pClass) {
+    checkNotNull(pClass, "Params class must not be null");
 
-        return new ResultConfiguratorFromMany<>(requestHandlerManager, method, pClass);
-    }
+    LOGGER.debug(
+        "Configuring incoming request params: "
+            + "method: "
+            + method
+            + ", "
+            + "params list items class: "
+            + pClass);
 
-    public ResultConfiguratorFromMany<Double> paramsAsListOfDouble() {
-        LOGGER.debug("Configuring incoming request params: " +
-                     "method: " + method + ", " +
-                     "params list items class: " + Double.class);
+    return new ResultConfiguratorFromMany<>(requestHandlerManager, method, pClass);
+  }
 
-        return new ResultConfiguratorFromMany<>(requestHandlerManager, method, Double.class);
-    }
+  public ResultConfiguratorFromMany<Double> paramsAsListOfDouble() {
+    LOGGER.debug(
+        "Configuring incoming request params: "
+            + "method: "
+            + method
+            + ", "
+            + "params list items class: "
+            + Double.class);
 
-    public ResultConfiguratorFromMany<String> paramsAsListOfString() {
-        LOGGER.debug("Configuring incoming request params: " +
-                     "method: " + method + ", " +
-                     "params list items class: " + String.class);
+    return new ResultConfiguratorFromMany<>(requestHandlerManager, method, Double.class);
+  }
 
-        return new ResultConfiguratorFromMany<>(requestHandlerManager, method, String.class);
-    }
+  public ResultConfiguratorFromMany<String> paramsAsListOfString() {
+    LOGGER.debug(
+        "Configuring incoming request params: "
+            + "method: "
+            + method
+            + ", "
+            + "params list items class: "
+            + String.class);
 
-    public ResultConfiguratorFromMany<Boolean> paramsAsListOfBoolean() {
-        LOGGER.debug("Configuring incoming request params: " +
-                     "method: " + method + ", " +
-                     "params list items class: " + Boolean.class);
+    return new ResultConfiguratorFromMany<>(requestHandlerManager, method, String.class);
+  }
 
-        return new ResultConfiguratorFromMany<>(requestHandlerManager, method, Boolean.class);
-    }
+  public ResultConfiguratorFromMany<Boolean> paramsAsListOfBoolean() {
+    LOGGER.debug(
+        "Configuring incoming request params: "
+            + "method: "
+            + method
+            + ", "
+            + "params list items class: "
+            + Boolean.class);
 
-    public <P> ResultConfiguratorFromOne<P> paramsAsDto(Class<P> pClass) {
-        checkNotNull(pClass, "Params class must not be null");
+    return new ResultConfiguratorFromMany<>(requestHandlerManager, method, Boolean.class);
+  }
 
-        LOGGER.debug("Configuring incoming request params: " +
-                     "method: " + method + ", " +
-                     "params object class: " + pClass);
+  public <P> ResultConfiguratorFromOne<P> paramsAsDto(Class<P> pClass) {
+    checkNotNull(pClass, "Params class must not be null");
 
-        return new ResultConfiguratorFromOne<>(requestHandlerManager, method, pClass);
-    }
+    LOGGER.debug(
+        "Configuring incoming request params: "
+            + "method: "
+            + method
+            + ", "
+            + "params object class: "
+            + pClass);
 
-    public ResultConfiguratorFromNone noParams() {
-        LOGGER.debug("Configuring incoming request params: " +
-                     "method: " + method + ", " +
-                     "params object class: " + Void.class);
+    return new ResultConfiguratorFromOne<>(requestHandlerManager, method, pClass);
+  }
 
-        return new ResultConfiguratorFromNone(requestHandlerManager, method);
-    }
+  public ResultConfiguratorFromNone noParams() {
+    LOGGER.debug(
+        "Configuring incoming request params: "
+            + "method: "
+            + method
+            + ", "
+            + "params object class: "
+            + Void.class);
 
-    public ResultConfiguratorFromOne<String> paramsAsString() {
-        LOGGER.debug("Configuring incoming request params: " +
-                     "method: " + method + ", " +
-                     "params object class: " + String.class);
+    return new ResultConfiguratorFromNone(requestHandlerManager, method);
+  }
 
-        return new ResultConfiguratorFromOne<>(requestHandlerManager, method, String.class);
-    }
+  public ResultConfiguratorFromOne<String> paramsAsString() {
+    LOGGER.debug(
+        "Configuring incoming request params: "
+            + "method: "
+            + method
+            + ", "
+            + "params object class: "
+            + String.class);
 
-    public ResultConfiguratorFromOne<Double> paramsAsDouble() {
-        LOGGER.debug("Configuring incoming request params: " +
-                     "method: " + method + ", " +
-                     "params object class: " + Double.class);
+    return new ResultConfiguratorFromOne<>(requestHandlerManager, method, String.class);
+  }
 
-        return new ResultConfiguratorFromOne<>(requestHandlerManager, method, Double.class);
-    }
+  public ResultConfiguratorFromOne<Double> paramsAsDouble() {
+    LOGGER.debug(
+        "Configuring incoming request params: "
+            + "method: "
+            + method
+            + ", "
+            + "params object class: "
+            + Double.class);
 
-    public ResultConfiguratorFromOne<Boolean> paramsAsBoolean() {
-        LOGGER.debug("Configuring incoming request params: " +
-                     "method: " + method + ", " +
-                     "params object class: " + Boolean.class);
+    return new ResultConfiguratorFromOne<>(requestHandlerManager, method, Double.class);
+  }
 
-        return new ResultConfiguratorFromOne<>(requestHandlerManager, method, Boolean.class);
-    }
+  public ResultConfiguratorFromOne<Boolean> paramsAsBoolean() {
+    LOGGER.debug(
+        "Configuring incoming request params: "
+            + "method: "
+            + method
+            + ", "
+            + "params object class: "
+            + Boolean.class);
+
+    return new ResultConfiguratorFromOne<>(requestHandlerManager, method, Boolean.class);
+  }
 }

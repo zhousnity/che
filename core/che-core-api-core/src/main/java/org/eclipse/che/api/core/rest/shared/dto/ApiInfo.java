@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,55 +7,54 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.api.core.rest.shared.dto;
 
 import org.eclipse.che.dto.shared.DTO;
 
-/**
- * @author andrew00x
- */
+/** @author andrew00x */
 @DTO
 public interface ApiInfo {
-    String getSpecificationVendor();
 
-    ApiInfo withSpecificationVendor(String specificationVendor);
+  String getSpecificationVendor();
 
-    void setSpecificationVendor(String specificationVendor);
+  ApiInfo withSpecificationVendor(String specificationVendor);
 
-    String getImplementationVendor();
+  void setSpecificationVendor(String specificationVendor);
 
-    ApiInfo withImplementationVendor(String implementationVendor);
+  String getImplementationVendor();
 
-    void setImplementationVendor(String implementationVendor);
+  ApiInfo withImplementationVendor(String implementationVendor);
 
-    String getSpecificationTitle();
+  void setImplementationVendor(String implementationVendor);
 
-    ApiInfo withSpecificationTitle(String specificationTitle);
+  String getSpecificationTitle();
 
-    void setSpecificationTitle(String specificationTitle);
+  ApiInfo withSpecificationTitle(String specificationTitle);
 
-    String getSpecificationVersion();
+  void setSpecificationTitle(String specificationTitle);
 
-    ApiInfo withSpecificationVersion(String specificationVersion);
+  String getSpecificationVersion();
 
-    void setSpecificationVersion(String specificationVersion);
+  ApiInfo withSpecificationVersion(String specificationVersion);
 
-    String getImplementationVersion();
+  void setSpecificationVersion(String specificationVersion);
 
-    ApiInfo withImplementationVersion(String implementationVersion);
+  String getImplementationVersion();
 
-    void setImplementationVersion(String implementationVersion);
+  ApiInfo withImplementationVersion(String implementationVersion);
 
-    String getScmRevision();
+  void setImplementationVersion(String implementationVersion);
 
-    ApiInfo withScmRevision(String scmRevision);
+  String getScmRevision();
 
-    void setScmRevision(String scmRevision);
+  ApiInfo withScmRevision(String scmRevision);
 
-    String getIdeVersion();
+  void setScmRevision(String scmRevision);
 
-    ApiInfo withIdeVersion(String ideVersion);
+  String getIdeVersion();
 
-    void setIdeVersion(String ideVersion);
+  ApiInfo withIdeVersion(String ideVersion);
+
+  void setIdeVersion(String ideVersion);
 }

@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,13 +7,12 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.everrest;
 
 import static org.eclipse.che.everrest.ServerContainerInitializeListener.ENVIRONMENT_CONTEXT;
 
 import org.eclipse.che.commons.env.EnvironmentContext;
-
 import org.everrest.core.ApplicationContext;
 import org.everrest.core.impl.method.MethodInvokerDecorator;
 import org.everrest.core.method.MethodInvoker;
@@ -23,39 +22,46 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Intended to prepare environment to invoke resource method when request received through web socket connection.
+ * Intended to prepare environment to invoke resource method when request received through web
+ * socket connection.
  *
  * @author andrew00x
  */
 class WebSocketMethodInvokerDecorator extends MethodInvokerDecorator {
-    private static final Logger LOG = LoggerFactory.getLogger(WebSocketMethodInvokerDecorator.class);
 
-    WebSocketMethodInvokerDecorator(MethodInvoker decoratedInvoker) {
-        super(decoratedInvoker);
-    }
+  private static final Logger LOG = LoggerFactory.getLogger(WebSocketMethodInvokerDecorator.class);
 
-    @Override
-    public Object invokeMethod(Object resource, GenericResourceMethod genericMethodResource, ApplicationContext context) {
-        WSConnection wsConnection = (WSConnection)org.everrest.core.impl.EnvironmentContext.getCurrent().get(WSConnection.class);
-        if (wsConnection != null) {
+  WebSocketMethodInvokerDecorator(MethodInvoker decoratedInvoker) {
+    super(decoratedInvoker);
+  }
 
-            EnvironmentContext environmentContext = (EnvironmentContext)wsConnection.getAttribute(ENVIRONMENT_CONTEXT);
-            if (environmentContext != null) {
-                try {
+  @Override
+  public Object invokeMethod(
+      Object resource, GenericResourceMethod genericMethodResource, ApplicationContext context) {
+    WSConnection wsConnection =
+        (WSConnection)
+            org.everrest.core.impl.EnvironmentContext.getCurrent().get(WSConnection.class);
+    if (wsConnection != null) {
 
-                    EnvironmentContext.setCurrent(environmentContext);
+      EnvironmentContext environmentContext =
+          (EnvironmentContext) wsConnection.getAttribute(ENVIRONMENT_CONTEXT);
+      if (environmentContext != null) {
+        try {
 
-                    LOG.debug("Websocket {} in http session {}",
-                             wsConnection.getId(),
-                             wsConnection.getHttpSession());
-                    return super.invokeMethod(resource, genericMethodResource, context);
-                } finally {
-                    EnvironmentContext.reset();
-                }
-            } else {
-                LOG.warn("EnvironmentContext  is null");
-            }
+          EnvironmentContext.setCurrent(environmentContext);
+
+          LOG.debug(
+              "Websocket {} in http session {}",
+              wsConnection.getId(),
+              wsConnection.getHttpSession());
+          return super.invokeMethod(resource, genericMethodResource, context);
+        } finally {
+          EnvironmentContext.reset();
         }
-        return super.invokeMethod(resource, genericMethodResource, context);
+      } else {
+        LOG.warn("EnvironmentContext  is null");
+      }
     }
+    return super.invokeMethod(resource, genericMethodResource, context);
+  }
 }

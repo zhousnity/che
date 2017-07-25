@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,7 +7,7 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.plugin.maven.client.inject;
 
 import com.google.gwt.inject.client.AbstractGinModule;
@@ -33,16 +33,28 @@ import org.eclipse.che.plugin.maven.client.wizard.MavenProjectWizardRegistrar;
 @ExtensionGinModule
 public class MavenGinModule extends AbstractGinModule {
 
-    @Override
-    protected void configure() {
-        GinMultibinder.newSetBinder(binder(), ProjectWizardRegistrar.class).addBinding().to(MavenProjectWizardRegistrar.class);
+  @Override
+  protected void configure() {
+    GinMultibinder.newSetBinder(binder(), ProjectWizardRegistrar.class)
+        .addBinding()
+        .to(MavenProjectWizardRegistrar.class);
 
-        GinMultibinder.newSetBinder(binder(), CommandType.class).addBinding().to(MavenCommandType.class);
+    GinMultibinder.newSetBinder(binder(), CommandType.class)
+        .addBinding()
+        .to(MavenCommandType.class);
 
-        GinMultibinder.newSetBinder(binder(), ResourceInterceptor.class).addBinding().to(MavenSourceFolderInterceptor.class);
-        GinMultibinder.newSetBinder(binder(), ResourceInterceptor.class).addBinding().to(PomInterceptor.class);
-        GinMultibinder.newSetBinder(binder(), ResourceInterceptor.class).addBinding().to(MavenProjectInterceptor.class);
+    GinMultibinder.newSetBinder(binder(), ResourceInterceptor.class)
+        .addBinding()
+        .to(MavenSourceFolderInterceptor.class);
+    GinMultibinder.newSetBinder(binder(), ResourceInterceptor.class)
+        .addBinding()
+        .to(PomInterceptor.class);
+    GinMultibinder.newSetBinder(binder(), ResourceInterceptor.class)
+        .addBinding()
+        .to(MavenProjectInterceptor.class);
 
-        GinMultibinder.newSetBinder(binder(), ResolvingProjectStateHolder.class).addBinding().to(ResolvingMavenProjectStateHolder.class);
-    }
+    GinMultibinder.newSetBinder(binder(), ResolvingProjectStateHolder.class)
+        .addBinding()
+        .to(ResolvingMavenProjectStateHolder.class);
+  }
 }

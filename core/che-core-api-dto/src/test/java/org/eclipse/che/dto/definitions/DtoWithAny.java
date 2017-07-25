@@ -1,4 +1,4 @@
-/*******************************************************************************
+/*
  * Copyright (c) 2012-2017 Codenvy, S.A.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -7,31 +7,31 @@
  *
  * Contributors:
  *   Codenvy, S.A. - initial API and implementation
- *******************************************************************************/
+ */
 package org.eclipse.che.dto.definitions;
 
-import org.eclipse.che.dto.shared.DTO;
-
 import java.util.List;
+import org.eclipse.che.dto.shared.DTO;
 
 /**
  * Makes use of the 'any' (JsonElement) property type feature.
- * 
+ *
  * @author Tareq Sharafy (tareq.sharafy@sap.com)
  */
 @DTO
 public interface DtoWithAny {
-    int getId();
 
-    Object getStuff();
+  int getId();
 
-    void setStuff(Object stuff);
+  Object getStuff();
 
-    DtoWithAny withStuff(Object stuff);
+  void setStuff(Object stuff);
 
-    List<Object> getObjects();
+  DtoWithAny withStuff(Object stuff);
 
-    void setObjects(List<Object> objects);
+  List<Object> getObjects();
 
-    DtoWithAny withObjects(List<Object> objects);
+  void setObjects(List<Object> objects);
+
+  DtoWithAny withObjects(List<Object> objects);
 }
