@@ -10,10 +10,13 @@
  *******************************************************************************/
 package org.eclipse.che.plugin.maven.client.resource;
 
+import org.eclipse.che.ide.api.preferences.PreferencesManager;
 import org.eclipse.che.ide.api.resources.Project;
 import org.eclipse.che.ide.api.resources.Resource;
 import org.eclipse.che.ide.api.resources.ResourceInterceptor;
 import org.eclipse.che.ide.api.resources.marker.PresentableTextMarker;
+
+import javax.inject.Inject;
 
 import static com.google.common.base.Strings.isNullOrEmpty;
 import static org.eclipse.che.plugin.maven.shared.MavenAttributes.ARTIFACT_ID;
@@ -27,9 +30,19 @@ import static org.eclipse.che.plugin.maven.shared.MavenAttributes.MAVEN_ID;
  */
 public class MavenProjectInterceptor implements ResourceInterceptor {
 
+    private final PreferencesManager preferencesManager;
+
+    @Inject
+    public MavenProjectInterceptor(PreferencesManager preferencesManager) {
+        this.preferencesManager = preferencesManager;
+    }
+
     /** {@inheritDoc} */
     @Override
     public void intercept(Resource resource) {
+        if (!Boolean.valueOf(preferencesManager.getValue("ide.project.explorer.show.maven.module"))) {
+            return;
+        }
         if (resource.isProject() && ((Project)resource).isTypeOf(MAVEN_ID)) {
 
             final String artifact = ((Project)resource).getAttribute(ARTIFACT_ID);

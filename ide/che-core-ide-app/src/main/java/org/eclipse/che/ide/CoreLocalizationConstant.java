@@ -1056,6 +1056,9 @@ public interface CoreLocalizationConstant extends Messages {
     @Key("welcome.preferences.title")
     String welcomePreferencesTitle();
 
+    @Key("Appearance.preferences.show.maven.module.names.checkbox.title")
+    String appearancePreferencesShowMavenModuleNamesCheckboxTitle();
+
     @Key("export.config.view.name")
     String exportConfigName();
 

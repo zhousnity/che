@@ -16,14 +16,20 @@ import org.eclipse.che.ide.api.theme.Theme;
 import java.util.List;
 
 /**
+ * View of 'Appearance' preferences page.
+ *
  * @author Evgen Vidolob
+ * @author Igor Vinokur
  */
 public interface AppearanceView extends View<AppearanceView.ActionDelegate> {
 
     void setThemes(List<Theme> themes, String currentThemeId);
 
-    interface ActionDelegate {
+    void setSelectedShowMavenModuleCheckBox(boolean selected);
 
+    interface ActionDelegate {
         void themeSelected(String themeId);
+
+        void showMavenModuleCheckBoxValueChanged(boolean value);
     }
 }

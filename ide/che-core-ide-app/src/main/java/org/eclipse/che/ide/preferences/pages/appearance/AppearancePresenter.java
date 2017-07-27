@@ -12,6 +12,7 @@ package org.eclipse.che.ide.preferences.pages.appearance;
 
 import org.eclipse.che.ide.CoreLocalizationConstant;
 
+import org.eclipse.che.ide.api.app.AppContext;
 import org.eclipse.che.ide.api.preferences.AbstractPreferencePagePresenter;
 import org.eclipse.che.ide.api.preferences.PreferencesManager;
 import org.eclipse.che.ide.api.theme.ThemeAgent;
@@ -20,28 +21,42 @@ import com.google.gwt.user.client.ui.AcceptsOneWidget;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-/** @author Evgen Vidolob */
+/**
+ * Presenter for 'Appearance' preferences page.
+ *
+ * @author Evgen Vidolob
+ * @author Igor Vinokur
+ */
 @Singleton
 public class AppearancePresenter extends AbstractPreferencePagePresenter implements AppearanceView.ActionDelegate {
 
-    public static final String PREF_IDE_THEME = "ide.theme";
+    public static final String PREF_IDE_THEME         = "ide.theme";
+    public static final String PREF_SHOW_MAVEN_MODULE = "ide.project.explorer.show.maven.module";
 
-    private AppearanceView     view;
-    private ThemeAgent         themeAgent;
-    private PreferencesManager preferencesManager;
-    private boolean dirty = false;
+    private final AppearanceView     view;
+    private final AppContext         appContext;
+    private final ThemeAgent         themeAgent;
+    private final PreferencesManager preferencesManager;
+
     private String themeId;
+    private boolean dirty = false;
+    private boolean showMavenModule;
 
     @Inject
     public AppearancePresenter(AppearanceView view,
+                               AppContext appContext,
                                CoreLocalizationConstant constant,
                                ThemeAgent themeAgent,
                                PreferencesManager preferencesManager) {
         super(constant.appearanceTitle(), constant.appearanceCategory());
         this.view = view;
+        this.appContext = appContext;
         this.themeAgent = themeAgent;
         this.preferencesManager = preferencesManager;
         view.setDelegate(this);
+
+        themeId = preferencesManager.getValue(PREF_IDE_THEME);
+        showMavenModule = Boolean.valueOf(preferencesManager.getValue(PREF_SHOW_MAVEN_MODULE));
     }
 
     @Override
@@ -58,6 +73,7 @@ public class AppearancePresenter extends AbstractPreferencePagePresenter impleme
             currentThemeId = themeAgent.getCurrentThemeId();
         }
         view.setThemes(themeAgent.getThemes(), currentThemeId);
+        view.setSelectedShowMavenModuleCheckBox(Boolean.valueOf(preferencesManager.getValue(PREF_SHOW_MAVEN_MODULE)));
     }
 
     @Override
@@ -68,8 +84,17 @@ public class AppearancePresenter extends AbstractPreferencePagePresenter impleme
     }
 
     @Override
+    public void showMavenModuleCheckBoxValueChanged(boolean showMavenModule) {
+        this.showMavenModule = showMavenModule;
+        dirty = showMavenModule != Boolean.valueOf(preferencesManager.getValue(PREF_SHOW_MAVEN_MODULE));
+        delegate.onDirtyChanged();
+    }
+
+    @Override
     public void storeChanges() {
         preferencesManager.setValue(PREF_IDE_THEME, themeId);
+        preferencesManager.setValue(PREF_SHOW_MAVEN_MODULE, String.valueOf(showMavenModule));
+        appContext.getWorkspaceRoot().synchronize();
         dirty = false;
     }
 
@@ -83,5 +108,4 @@ public class AppearancePresenter extends AbstractPreferencePagePresenter impleme
 
         dirty = false;
     }
-
 }
