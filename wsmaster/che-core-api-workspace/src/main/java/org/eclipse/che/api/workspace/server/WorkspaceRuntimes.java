@@ -12,6 +12,7 @@ package org.eclipse.che.api.workspace.server;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 import org.eclipse.che.api.core.ConflictException;
 import org.eclipse.che.api.core.NotFoundException;
@@ -36,7 +37,9 @@ import org.eclipse.che.api.workspace.server.spi.WorkspaceDao;
 import org.eclipse.che.api.workspace.shared.dto.event.RuntimeStatusEvent;
 import org.eclipse.che.api.workspace.shared.dto.event.WorkspaceStatusEvent;
 import org.eclipse.che.commons.env.EnvironmentContext;
+import org.eclipse.che.commons.lang.concurrent.StripedLocks;
 import org.eclipse.che.commons.lang.concurrent.ThreadLocalPropagateContext;
+import org.eclipse.che.commons.lang.concurrent.Unlocker;
 import org.eclipse.che.commons.subject.Subject;
 import org.eclipse.che.core.db.DBInitializer;
 import org.eclipse.che.dto.server.DtoFactory;
@@ -52,6 +55,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -79,6 +83,8 @@ public class WorkspaceRuntimes {
     private final EventService                        eventService;
     private final WorkspaceSharedPool                 sharedPool;
     private final WorkspaceDao                        workspaceDao;
+    private final StripedLocks                        locks;
+    private final AtomicBoolean isStartRefused = new AtomicBoolean(false);
 
     @Inject
     public WorkspaceRuntimes(EventService eventService,
@@ -89,6 +95,8 @@ public class WorkspaceRuntimes {
         this.runtimes = new ConcurrentHashMap<>();
         this.eventService = eventService;
         this.sharedPool = sharedPool;
+        // 16 - experimental value for stripes count, it comes from default hash map size
+        this.locks = new StripedLocks(16);
         this.workspaceDao = workspaceDao;
 
         // TODO: consider extracting to a strategy interface(1. pick the last, 2. fail with conflict)
@@ -212,7 +220,12 @@ public class WorkspaceRuntimes {
 
         Subject subject = EnvironmentContext.getCurrent().getSubject();
         RuntimeIdentity runtimeId = new RuntimeIdentityImpl(workspaceId, envName, subject.getUserName());
-        try {
+        try (@SuppressWarnings("unused") Unlocker u = locks.writeLock(workspaceId)) {
+            if (isStartRefused.get()) {
+                throw new ConflictException(format("Start of the workspace '%s' is rejected by the system, " +
+                                                   "no more workspaces are allowed to start",
+                                                   workspace.getConfig().getName()));
+            }
             RuntimeContext runtimeContext = infra.prepare(runtimeId, environment);
 
             InternalRuntime runtime = runtimeContext.getRuntime();
@@ -266,14 +279,14 @@ public class WorkspaceRuntimes {
      * @param workspaceId
      *         identifier of workspace which should be stopped
      * @throws NotFoundException
-     *         when workspace with specified identifier is not running
+     *         when workspace with specified identifier does not have runtime
      * @throws ConflictException
      *         when running workspace status is different from {@link WorkspaceStatus#RUNNING}
      * @see WorkspaceStatus#STOPPING
      */
     public void stop(String workspaceId, Map<String, String> options) throws NotFoundException,
                                                                              ConflictException {
-        RuntimeState state = runtimes.get(workspaceId);
+        final RuntimeState state = runtimes.get(workspaceId);
         if (state == null) {
             throw new NotFoundException("Workspace with id '" + workspaceId + "' is not running.");
         }
@@ -404,6 +417,37 @@ public class WorkspaceRuntimes {
         return new EnvironmentImpl(environment);
     }
 
+    public boolean refuseWorkspacesStart() {
+        return isStartRefused.compareAndSet(false, true);
+    }
+
+    public Set<String> getRuntimesIds() {
+        return ImmutableSet.copyOf(runtimes.keySet());
+    }
+
+    public boolean isAnyRunning() {
+        return !runtimes.isEmpty();
+    }
+
+    /**
+     * Return status of the workspace.
+     *
+     * @param workspaceId
+     *         ID of requested workspace
+     * @return {@link WorkspaceStatus#STOPPED} if workspace is not running or,
+     * the status of workspace runtime otherwise
+     */
+    public WorkspaceStatus getStatus(String workspaceId) {
+        requireNonNull(workspaceId, "Required non-null workspace id");
+        try (@SuppressWarnings("unused") Unlocker u = locks.readLock(workspaceId)) {
+            RuntimeState state = runtimes.get(workspaceId);
+            if (state == null) {
+                return WorkspaceStatus.STOPPED;
+            }
+            return state.status;
+        }
+    }
+
     private class CleanupRuntimeOnAbnormalRuntimeStop implements EventSubscriber<RuntimeStatusEvent> {
         @Override
         public void onEvent(RuntimeStatusEvent event) {
@@ -432,62 +476,7 @@ public class WorkspaceRuntimes {
         }
     }
 
-//    /**
-//     * Removes all workspaces from the in-memory storage, while
-//     * {@link CheEnvironmentEngine} is responsible for environment destroying.
-//     */
-//    @PreDestroy
-//    @VisibleForTesting
-//    void cleanup() {
-//        isPreDestroyInvoked = true;
-//
-//        // wait existing tasks to complete
-//        sharedPool.terminateAndWait();
-//
-//        List<String> idsToStop;
-//        try (@SuppressWarnings("unused") CloseableLock l = locks.acquireWriteAllLock()) {
-//            idsToStop = workspaces.entrySet()
-//                                  .stream()
-//                                  .filter(e -> e.getValue().status != STOPPING)
-//                                  .map(Map.Entry::getKey)
-//                                  .collect(Collectors.toList());
-//            workspaces.clear();
-//        }
-//
-//        // nothing to stop
-//        if (idsToStop.isEmpty()) {
-//            return;
-//        }
-//
-//        LOG.info("Shutdown running workspaces, workspaces to shutdown '{}'", idsToStop.size());
-//        ExecutorService executor =
-//                Executors.newFixedThreadPool(2 * java.lang.Runtime.getRuntime().availableProcessors(),
-//                                             new ThreadFactoryBuilder().setNameFormat("StopEnvironmentsPool-%d")
-//                                                                       .setDaemon(false)
-//                                                                       .build());
-//        for (String id : idsToStop) {
-//            executor.execute(() -> {
-//                try {
-//                    networks.stop(id);
-//                } catch (Exception x) {
-//                    LOG.error(x.getMessage(), x);
-//                }
-//            });
-//        }
-//
-//        executor.shutdown();
-//        try {
-//            if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
-//                executor.shutdownNow();
-//                if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-//                    LOG.error("Unable terminate machines pool");
-//                }
-//            }
-//        } catch (InterruptedException e) {
-//            executor.shutdownNow();
-//            Thread.currentThread().interrupt();
-//        }
-//    }
+
 //
 //    private void ensurePreDestroyIsNotExecuted() throws ServerException {
 //        if (isPreDestroyInvoked) {
